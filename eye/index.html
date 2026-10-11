@@ -253,12 +253,18 @@ button:focus-visible{outline:3px solid var(--magenta);outline-offset:2px}
 .kind{max-width:none}
 .handle span[hidden]+input{padding-left:14px}
 .rk-who{display:flex;flex-direction:column;min-width:0;line-height:1.3}
-.rk-title{font:700 11px var(--f-body);letter-spacing:.08em;color:var(--muted)}
+.rk-title{font:400 18px var(--f-display);letter-spacing:.06em;color:var(--muted);line-height:1.2;margin-top:2px}
 .rklist li.top .rk-n{width:2.1em;height:2.1em;display:grid;place-items:center;border-radius:50%;font-size:15px;margin-left:auto;color:#2a2008!important;box-shadow:inset 0 0 0 2px rgba(0,0,0,.15)}
 .rklist li.top1 .rk-n{background:linear-gradient(135deg,#fff3b0,#e2b53a 50%,#9a6f12)}
 .rklist li.top2 .rk-n{background:linear-gradient(135deg,#ffffff,#c3cad2 50%,#6f7a86)}
 .rklist li.top3 .rk-n{background:linear-gradient(135deg,#ffd9b5,#c47a3d 50%,#7a431b)}
 .rklist li.top1 .rk-title{color:#a87a12}.rklist li.top3 .rk-title{color:#a5602a}
+.metal-text{background:linear-gradient(160deg,var(--m1),var(--m2) 55%,var(--m1));-webkit-background-clip:text;background-clip:text;color:transparent;font-size:1.6em;filter:drop-shadow(0 1px 0 rgba(255,255,255,.6)) drop-shadow(0 3px 3px rgba(0,0,0,.3))}
+.earned{display:flex;align-items:center;gap:16px;padding:16px 18px;border-radius:8px;background:var(--mat);color:#f3f6f0;border:3px solid var(--m1)}
+.earned-medal{flex:none;width:72px;height:72px;border-radius:50%;display:grid;place-items:center;font:400 38px var(--f-display);color:#2a2008;background:linear-gradient(135deg,var(--m0),var(--m1) 50%,var(--m2));box-shadow:0 4px 10px rgba(0,0,0,.35),inset 0 0 0 4px rgba(255,255,255,.35)}
+.earned small{display:block;font-size:12px;font-weight:700;letter-spacing:.12em;opacity:.85}
+.earned-jp{display:block;font:400 clamp(40px,11vw,56px)/1.1 var(--f-display);background:linear-gradient(135deg,var(--m0),var(--m1) 45%,var(--m0) 55%,var(--m2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.earned-en{display:block;font:500 12px var(--f-mono);letter-spacing:.2em;opacity:.8}
 .rk-earned{display:inline-block;margin-top:2px;padding:4px 12px;border-radius:99px;font-weight:700;color:#2a2008;background:linear-gradient(135deg,#fff3b0,#e2b53a 50%,#9a6f12)}
 .rklist a{color:var(--ink);text-decoration:none;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rk-s{font:500 16px var(--f-mono)}
@@ -967,7 +973,7 @@ function end(){
   const weak=[...ORDER].sort((a,b)=>avgOf(a)-avgOf(b))[0],tos=S.scores.filter(s=>s.timeout).length;
   $("main").innerHTML=`<section class="panel">
     <div class="rank">${en}</div>
-    <h2>${jp}<br><span class="big" style="font-size:clamp(48px,12vw,84px)">${avg}</span> <span style="font-size:18px;font-family:var(--f-body)">/ 100</span></h2>
+    <h2><span id="endJp">${jp}</span><br><span class="big" style="font-size:clamp(48px,12vw,84px)">${avg}</span> <span style="font-size:18px;font-family:var(--f-body)">/ 100</span></h2>
     <div class="rows">${rows}</div>
     <p class="hint">いちばん伸びしろがあるのは「${MODES[weak].name}」。${tos?`時間切れ ${tos} 回。`:""}${S.wasBest?"自己ベスト更新です。":`自己ベストは ${best} 点。`}</p>
     <div class="rec"><div class="rank">「${MODES[weak].name}」を鍛える本</div><ul>${(WEAK_BOOKS[weak]||[]).map(b=>bookLi(b)).join("")}</ul></div>
@@ -1290,9 +1296,11 @@ function showRank(r){
       ${r.dayTotal?`<div><small>今日</small><div class="rk-big"><span class="big">${dN}</span><span>位 / ${r.dayTotal}人</span></div></div>`:""}
       <div><small>総合</small><div class="rk-big"><span class="big">${aN}</span><span>位 / ${r.total}人</span></div></div>
     </div>
-    ${(T=>T?`<p><span class="rk-earned" style="background:linear-gradient(135deg,${T.metal[0]},${T.metal[1]} 50%,${T.metal[2]})">称号「${T.jp}」</span></p>`:"")(titleOf(r))}
+    ${(T=>T?`<div class="earned" style="--m0:${T.metal[0]};--m1:${T.metal[1]};--m2:${T.metal[2]}"><span class="earned-medal">${T.n}</span><div><small>称号を獲得</small><b class="earned-jp">${T.jp}</b><span class="earned-en">${T.en}</span></div></div>`:"")(titleOf(r))}
     <p class="hint">${r.isBest?"自己ベスト更新！":`順位はあなたのベスト（総合 ${r.best} 点${r.dayTotal&&!r.isDayBest?`・今日 ${r.dayBest} 点`:""}）で決まります。`}</p>
     <div class="actions"><button class="ghost" id="rkSee">ランキングを見る</button></div>`;
+  const T=titleOf(r),ej=$("endJp");
+  if(T&&ej){ej.textContent=T.jp;ej.className="metal-text";ej.style.cssText=`--m0:${T.metal[0]};--m1:${T.metal[1]};--m2:${T.metal[2]}`;const rk=ej.closest(".panel").querySelector(".rank");if(rk)rk.textContent=T.en}
   const s=$("rkSee");if(s)s.onclick=()=>{intro();const p=$("rankPanel");if(p)p.scrollIntoView({block:"start"})};
   return r;
 }
