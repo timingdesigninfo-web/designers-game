@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>デザイナーの発想｜今日のお題</title>
+<meta name="description" content="毎日ひとつのお題を、○△□だけで表現する。デザイナーのための発想トレーニング。">
+<meta property="og:title" content="デザイナーの発想｜今日のお題">
+<meta property="og:description" content="毎日ひとつのお題を、○△□だけで表現する。みんなの答えは #デザイナーの発想 で。">
+<meta property="og:type" content="website">
+<meta property="og:image" content="og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#EDE4D3">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23F6F1E7'/%3E%3Ccircle cx='38' cy='40' r='24' fill='%23E2462F'/%3E%3Cpolygon points='62,30 88,78 36,78' fill='%2323446B'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700&family=Zen+Old+Mincho:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ホーム -->
+<section id="home" class="view active">
+  <header class="masthead">
+    <div class="logo">
+      <svg viewBox="0 0 60 24" aria-hidden="true"><circle cx="10" cy="12" r="9" fill="var(--shu)"/><polygon points="30,3 40,21 20,21" fill="var(--ai)"/><rect x="44" y="4" width="16" height="16" fill="var(--yamabuki)"/></svg>
+    </div>
+    <h1>デザイナーの発想</h1>
+    <p class="lead">毎日ひとつのお題を、○△□だけで。</p>
+  </header>
+
+  <article class="odai-card" id="todayCard">
+    <div class="odai-meta"><span id="todayNo">No.1</span><span id="todayDate"></span></div>
+    <p class="odai-label">今日のお題</p>
+    <p class="odai-word" id="todayWord">—</p>
+    <p class="odai-rule" id="todayRule"></p>
+    <button class="btn primary" id="startToday">つくる</button>
+    <p class="done-note" id="todayDone" hidden>今日はもう提出済み。つくり直しもできます。</p>
+  </article>
+
+  <div class="row-btns">
+    <button class="btn ghost" id="startPractice">ほかのお題で練習</button>
+    <a class="btn ghost" id="seeOthers" target="_blank" rel="noopener">みんなの答えを見る</a>
+  </div>
+
+  <section class="block" id="historyBlock" hidden>
+    <h2>これまでの作品</h2>
+    <div class="history" id="history"></div>
+  </section>
+
+  <section class="block howto">
+    <h2>遊び方</h2>
+    <ol>
+      <li>毎日0時（日本時間）に、全員共通のお題が1つ出ます。</li>
+      <li>○△□を置いて、動かす・大きさを変える・回す・色を変えるだけで表現します。</li>
+      <li>できたら画像にしてXへ。<b>#デザイナーの発想</b> でほかの人の答えと見比べましょう。</li>
+    </ol>
+    <p class="tip">正解はありません。「その発想はなかった」を探すゲームです。</p>
+  </section>
+
+  <section class="block books">
+    <h2>発想を鍛える本</h2>
+    <ul class="booklist">
+      <li><a target="_blank" rel="noopener sponsored" href="https://www.amazon.co.jp/s?k=%E3%82%A2%E3%82%A4%E3%83%87%E3%82%A2%E3%81%AE%E3%81%A4%E3%81%8F%E3%82%8A%E6%96%B9+%E3%83%A4%E3%83%B3%E3%82%B0&tag=timing-22"><b>アイデアのつくり方</b><span>ジェームス・W・ヤング｜発想の古典。60分で読める</span></a></li>
+      <li><a target="_blank" rel="noopener sponsored" href="https://www.amazon.co.jp/s?k=%E8%80%83%E5%85%B7+%E5%8A%A0%E8%97%A4%E6%98%8C%E6%B2%BB&tag=timing-22"><b>考具</b><span>加藤昌治｜アイデアを出すための道具箱</span></a></li>
+      <li><a target="_blank" rel="noopener sponsored" href="https://www.amazon.co.jp/s?k=%E3%81%AA%E3%82%8B%E3%81%BB%E3%81%A9%E3%83%87%E3%82%B6%E3%82%A4%E3%83%B3&tag=timing-22"><b>なるほどデザイン</b><span>筒井美希｜目で見て楽しむデザインの発想</span></a></li>
+    </ul>
+    <p class="disclosure">※ Amazonアソシエイトのリンクを含みます</p>
+  </section>
+
+  <footer class="foot">
+    <p>姉妹ゲーム：<a href="https://claude.ai/artifact/39MNiUcoG1MVuSv2CN67Bc" target="_blank" rel="noopener">デザイナーの目</a>（定規なしで中心・角度を当てる）</p>
+  </footer>
+</section>
+
+<!-- エディタ -->
+<section id="editor" class="view">
+  <header class="ed-head">
+    <button class="icon-btn" id="edBack" aria-label="戻る">
+      <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="ed-title">
+      <p class="ed-word" id="edWord">—</p>
+      <p class="ed-rule" id="edRule"></p>
+    </div>
+    <button class="icon-btn" id="edUndo" aria-label="ひとつ戻す">
+      <svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5M4 9h10a6 6 0 010 12h-3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </header>
+
+  <div class="board-wrap">
+    <svg id="board" viewBox="0 0 1000 1000" aria-label="作品">
+      <defs>
+        <clipPath id="clip"><rect width="1000" height="1000"/></clipPath>
+        <filter id="paper" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#3a2a12" flood-opacity=".22"/>
+        </filter>
+      </defs>
+      <rect id="bg" width="1000" height="1000"/>
+      <g id="pieces" clip-path="url(#clip)"></g>
+      <g id="ui"></g>
+    </svg>
+    <p class="board-hint" id="hint">下の ○△□ をタップして置こう</p>
+  </div>
+
+  <div class="tools">
+    <div class="tool-row add-row">
+      <button class="shape-btn" data-add="circle" aria-label="丸を置く"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="15"/></svg></button>
+      <button class="shape-btn" data-add="tri" aria-label="三角を置く"><svg viewBox="0 0 40 40"><polygon points="20,4 37,35 3,35"/></svg></button>
+      <button class="shape-btn" data-add="square" aria-label="四角を置く"><svg viewBox="0 0 40 40"><rect x="6" y="6" width="28" height="28"/></svg></button>
+      <span class="counter" id="counter">0/3</span>
+    </div>
+
+    <div class="tool-row">
+      <div class="seg" role="tablist">
+        <button class="seg-btn active" data-target="piece">パーツの色</button>
+        <button class="seg-btn" data-target="bg">背景の色</button>
+      </div>
+    </div>
+    <div class="palette" id="palette"></div>
+
+    <div class="tool-row act-row" id="actRow">
+      <button class="act" data-act="front">前へ</button>
+      <button class="act" data-act="back">後ろへ</button>
+      <button class="act" data-act="flip">反転</button>
+      <button class="act" data-act="dup">複製</button>
+      <button class="act danger" data-act="del">削除</button>
+    </div>
+
+    <p class="gesture-hint">ドラッグで移動 ／ ● で拡大・変形 ／ ↻ で回転 ／ 2本指でも拡大・回転</p>
+
+    <button class="btn primary wide" id="finish">できた</button>
+  </div>
+</section>
+
+<!-- 完成 -->
+<section id="result" class="view">
+  <header class="res-head">
+    <button class="icon-btn" id="resBack" aria-label="作品に戻る">
+      <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <p>できあがり</p>
+    <span class="icon-btn spacer"></span>
+  </header>
+  <div class="card-preview"><img id="cardImg" alt="シェア用の画像"></div>
+  <div class="share-btns">
+    <button class="btn primary wide" id="shareX">Xに投稿する</button>
+    <p class="share-note" id="shareNote"></p>
+    <div class="row-btns">
+      <button class="btn ghost" id="saveImg">画像を保存</button>
+      <a class="btn ghost" id="resOthers" target="_blank" rel="noopener">みんなの答え</a>
+    </div>
+    <div class="row-btns">
+      <button class="btn ghost" id="resHome">トップへ</button>
+      <button class="btn ghost" id="resPractice">別のお題で練習</button>
+    </div>
+  </div>
+</section>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="odai.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
