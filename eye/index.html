@@ -762,7 +762,7 @@ function intro(){
     ${(()=>{const me=lsGet(RK_ME,null);return me&&me.name?`<p class="hint">ランク戦の名前：${esc(shown(me))}<button class="linkbtn" id="rkChange">変える</button></p>`:""})()}
     ${best?`<span class="note">自己ベスト ${best} 点</span>`:""}
   </section>
-  <section class="panel" id="rankPanel"><div class="hhead"><div class="rank">RANKING · ランク戦</div><span class="note" id="rkTotal"></span></div><div class="seg rktabs" role="tablist"><button class="segb" data-s="today" role="tab" aria-pressed="true"><b>今日</b><small>0時にリセット</small></button><button class="segb" data-s="all" role="tab" aria-pressed="false"><b>総合</b><small>全期間・全員の最高点</small></button></div><div id="rkList"><p class="hint">読み込み中…</p></div></section>
+  <section class="panel" id="rankPanel"><div class="hhead"><div class="rank">RANKING · ランク戦</div><span class="note" id="rkTotal"></span></div><div class="seg rktabs" role="tablist"><button class="segb" data-s="today" role="tab" aria-pressed="true"><b>今日</b><small>0時にリセット</small></button><button class="segb" data-s="all" role="tab" aria-pressed="false"><b>総合</b><small>全期間</small></button></div><div id="rkList"><p class="hint">読み込み中…</p></div></section>
   ${histHTML(loadHist())}`;
   bindHist();
   loadRanking();
