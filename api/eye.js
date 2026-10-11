@@ -1,0 +1,172 @@
+// デザイナーの目：ランク戦のランキングAPI（Vercel Functions + Upstash Redis）
+//
+// GET  /api/eye?action=top              上位100件と参加人数
+// POST /api/eye  {action:"start", ...}   ランク戦を始める（問題の種と署名を発行）
+// POST /api/eye  {action:"submit", ...}  結果を登録（自己ベストなら更新）して順位を返す
+// POST /api/eye  {action:"delete", ...}  自分の記録をランキングから外す
+//
+// 環境変数：KV_REST_API_URL / KV_REST_API_TOKEN（または UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN）
+//           RANK_SECRET（任意。未設定ならデータベースの鍵から作る）
+
+const crypto = require('crypto');
+
+const DB_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+const DB_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+const SECRET = process.env.RANK_SECRET || crypto.createHash('sha256').update('eye-rank:' + (DB_TOKEN || '')).digest('hex');
+
+const RANK = 'eye:rank';
+const userKey = h => 'eye:user:' + h;
+const HANDLE_RE = /^[A-Za-z0-9_]{1,15}$/;
+const MIN_PLAY_MS = Number(process.env.EYE_MIN_PLAY_MS || 45 * 1000); // 18ラウンドをこれより速く終えるのは不可能
+const MAX_PLAY_MS = 3 * 3600 * 1000;
+const MODES = 6;
+
+async function db(cmds) {
+  const r = await fetch(DB_URL + '/pipeline', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + DB_TOKEN, 'Content-Type': 'application/json' },
+    body: JSON.stringify(cmds),
+  });
+  if (!r.ok) throw new Error('db ' + r.status);
+  const out = await r.json();
+  return out.map(x => { if (x.error) throw new Error(x.error); return x.result; });
+}
+
+const sign = s => crypto.createHmac('sha256', SECRET).update(s).digest('hex');
+const sha = s => crypto.createHash('sha256').update(s).digest('hex');
+const safeEq = (a, b) => typeof a === 'string' && typeof b === 'string' && a.length === b.length && crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+// 同点なら先に出した人が上：小数部に「早さ」を入れる
+const rankScore = (avg, t) => avg + (1e10 - Math.floor(t / 1000)) / 1e11;
+
+function send(res, code, body) {
+  res.statusCode = code;
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store');
+  res.end(JSON.stringify(body));
+}
+
+async function rateLimited(req) {
+  const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
+  const key = 'eye:rl:' + sha(ip).slice(0, 16) + ':' + Math.floor(Date.now() / 60000);
+  const [n] = await db([['INCR', key], ['EXPIRE', key, 120]]);
+  return n > 30;
+}
+
+function cleanHandle(h) {
+  h = String(h || '').trim().replace(/^@/, '');
+  return HANDLE_RE.test(h) ? h : null;
+}
+
+async function owner(lower) {
+  const [u] = await db([['HGETALL', userKey(lower)]]);
+  if (!u || !u.length) return null;
+  const o = {};
+  for (let i = 0; i < u.length; i += 2) o[u[i]] = u[i + 1];
+  return o;
+}
+
+async function top() {
+  const [list, total] = await db([['ZREVRANGE', RANK, 0, 99], ['ZCARD', RANK]]);
+  if (!list.length) return { total: 0, list: [] };
+  const metas = await db(list.map(h => ['HMGET', userKey(h), 'name', 'best', 'rows', 'bt']));
+  return {
+    total,
+    list: list.map((h, i) => {
+      const [name, best, rows, bt] = metas[i];
+      return { rank: i + 1, handle: name || h, avg: Number(best), rows: rows ? JSON.parse(rows) : null, t: Number(bt) };
+    }),
+  };
+}
+
+async function start(body) {
+  const handle = cleanHandle(body.handle);
+  if (!handle) return [400, { error: 'Xのアカウント名は英数字と _ の15文字以内で入れてください。' }];
+  const u = await owner(handle.toLowerCase());
+  if (u && !safeEq(sha(String(body.token || '')), u.tok)) {
+    return [409, { error: `@${handle} は別の端末で登録されています。登録した端末で遊ぶか、別のアカウント名を使ってください。` }];
+  }
+  const gid = crypto.randomBytes(9).toString('hex');
+  const seed = crypto.randomInt(1, 1e9);
+  const t0 = Date.now();
+  return [200, { gid, seed, t0, sig: sign([gid, seed, t0, handle.toLowerCase()].join('|')) }];
+}
+
+async function submit(body) {
+  const handle = cleanHandle(body.handle);
+  if (!handle) return [400, { error: 'アカウント名が正しくありません。' }];
+  const lower = handle.toLowerCase();
+  const { gid, seed, t0, sig } = body;
+  if (!safeEq(sign([gid, seed, t0, lower].join('|')), String(sig || ''))) return [400, { error: 'ランク戦の情報が正しくありません。' }];
+  const age = Date.now() - Number(t0);
+  if (!(age >= MIN_PLAY_MS && age <= MAX_PLAY_MS)) return [400, { error: 'ランク戦の時間が範囲外です。もう一度挑戦してください。' }];
+
+  const avg = Number(body.avg);
+  const rows = Array.isArray(body.rows) ? body.rows.map(Number) : [];
+  if (!Number.isInteger(avg) || avg < 0 || avg > 100) return [400, { error: '点数が正しくありません。' }];
+  if (rows.length !== MODES || rows.some(v => !Number.isInteger(v) || v < 0 || v > 100)) return [400, { error: '種目別の点数が正しくありません。' }];
+  if (Math.abs(rows.reduce((a, b) => a + b, 0) / MODES - avg) > 1.5) return [400, { error: '点数の合計が合いません。' }];
+
+  // 同じランク戦は1回だけ登録できる
+  const [fresh] = await db([['SET', 'eye:gid:' + gid, '1', 'NX', 'EX', 4 * 3600]]);
+  if (fresh !== 'OK') return [409, { error: 'このランク戦はもう登録済みです。' }];
+
+  let u = await owner(lower);
+  let newToken = null;
+  if (u) {
+    if (!safeEq(sha(String(body.token || '')), u.tok)) return [409, { error: `@${handle} は別の端末で登録されています。` }];
+  } else {
+    newToken = crypto.randomBytes(18).toString('hex');
+    u = { tok: sha(newToken), best: '-1' };
+  }
+
+  const now = Date.now();
+  const isBest = avg > Number(u.best);
+  const cmds = [['HSET', userKey(lower), 'name', handle, 'tok', u.tok, 'last', String(avg), 'lt', String(now), 'plays', String(Number(u.plays || 0) + 1)]];
+  if (isBest) {
+    cmds.push(['HSET', userKey(lower), 'best', String(avg), 'rows', JSON.stringify(rows), 'bt', String(now)]);
+    cmds.push(['ZADD', RANK, rankScore(avg, now), lower]);
+  }
+  cmds.push(['ZREVRANK', RANK, lower], ['ZCARD', RANK], ['ZCOUNT', RANK, String(avg + 1), '+inf']);
+  const r = await db(cmds);
+  const [rank, total, above] = r.slice(-3);
+  return [200, {
+    handle,
+    avg,
+    best: isBest ? avg : Number(u.best),
+    isBest,
+    rank: rank + 1,              // 自己ベストでの総合順位
+    thisRank: above + 1,         // 今回の点数なら何位相当か
+    total,
+    token: newToken,
+  }];
+}
+
+async function remove(body) {
+  const handle = cleanHandle(body.handle);
+  if (!handle) return [400, { error: 'アカウント名が正しくありません。' }];
+  const lower = handle.toLowerCase();
+  const u = await owner(lower);
+  if (!u) return [200, { removed: false }];
+  if (!safeEq(sha(String(body.token || '')), u.tok)) return [403, { error: '登録した端末からだけ外せます。' }];
+  await db([['ZREM', RANK, lower], ['DEL', userKey(lower)]]);
+  return [200, { removed: true }];
+}
+
+module.exports = async (req, res) => {
+  if (!DB_URL || !DB_TOKEN) return send(res, 503, { error: 'ランキングの準備中です（データベース未接続）。' });
+  try {
+    if (req.method === 'GET') return send(res, 200, await top());
+    if (req.method !== 'POST') return send(res, 405, { error: 'method' });
+    if (await rateLimited(req)) return send(res, 429, { error: '少し時間をおいてからもう一度どうぞ。' });
+    let body = req.body;
+    if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
+    body = body || {};
+    const fn = { start, submit, delete: remove }[body.action];
+    if (!fn) return send(res, 400, { error: 'action' });
+    const [code, out] = await fn(body);
+    return send(res, code, out);
+  } catch (e) {
+    console.error(e);
+    return send(res, 500, { error: 'サーバーでエラーが起きました。少し待ってからもう一度どうぞ。' });
+  }
+};

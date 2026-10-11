@@ -1,0 +1,1205 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>デザイナーの目</title>
+<meta name="description" content="中心・太さ・色・分割・角度・カーニング。定規なしで当てる18ラウンド。ランク戦で全国のデザイナーと勝負。">
+<meta property="og:title" content="デザイナーの目">
+<meta property="og:description" content="定規なしで中心・太さ・色・分割・角度・カーニングを当てる18ラウンド。ランク戦で順位を競おう。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://designers-game.vercel.app/eye/">
+<meta property="og:image" content="https://designers-game.vercel.app/eye/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#2d5a4b">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 26'%3E%3Crect width='26' height='26' fill='%232d5a4b'/%3E%3Cg stroke='%23f3f6f0' stroke-width='1.8' fill='none'%3E%3Ccircle cx='13' cy='13' r='7'/%3E%3Cline x1='13' y1='2' x2='13' y2='24'/%3E%3Cline x1='2' y1='13' x2='24' y2='13'/%3E%3C/g%3E%3C/svg%3E">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&family=Cormorant+Garamond:wght@700&display=swap">
+<style>
+/* Layout: one narrow column; a green cutting mat is the stage, CMYK process inks mark answers (magenta) and your marks (yellow). */
+:root{
+  --paper:#e8ebe5; --surface:#f6f7f2; --ink:#1c2220; --muted:#5a655f; --rule:#c6cdc5;
+  --mat:#2d5a4b; --mat-line:#3c6c5c; --mat-major:#4d7f6e; --chalk:#f3f6f0;
+  --magenta:#d1006c; --yellow:#f2c200; --sheet:#ffffff; --type:#111111; --pink:#ff8cc4;
+  --f-display:"Dela Gothic One","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#111514; --surface:#191f1d; --ink:#e7ebe6; --muted:#94a199; --rule:#2a3330;
+  --mat:#1c3a30; --mat-line:#26483c; --mat-major:#335a4c; --chalk:#eef2ec;
+  --magenta:#ff4aa0; --yellow:#ffd43c; --sheet:#0c0d0d; --type:#f4f4f2; --pink:#ff8cc4; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#111514; --surface:#191f1d; --ink:#e7ebe6; --muted:#94a199; --rule:#2a3330;
+  --mat:#1c3a30; --mat-line:#26483c; --mat-major:#335a4c; --chalk:#eef2ec;
+  --magenta:#ff4aa0; --yellow:#ffd43c; --sheet:#0c0d0d; --type:#f4f4f2; --pink:#ff8cc4; color-scheme:dark}
+
+html{-webkit-text-size-adjust:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;padding-inline:16px;padding-block:20px 32px;box-sizing:border-box}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+.app{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.mark{display:flex;align-items:center;gap:10px}
+.reg{width:26px;height:26px;flex:none}
+.reg circle,.reg line{stroke:var(--ink);fill:none;stroke-width:1.6}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(22px,5vw,30px);line-height:1;margin:0;letter-spacing:.02em}
+.meta{font-family:var(--f-mono);font-size:12px;color:var(--muted);display:flex;gap:14px;font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.meta b{color:var(--ink);font-weight:500}
+
+.ticks{display:grid;grid-template-columns:repeat(18,1fr);gap:3px}
+.ticks i{height:6px;background:var(--rule);border-radius:1px;transition:background .3s}
+.ticks i.now{background:var(--ink)}
+
+.brief{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;min-height:28px}
+.tag{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:2px 8px;border:1px solid var(--ink);border-radius:2px}
+.prompt{font-weight:700;font-size:17px;text-wrap:balance}
+
+.matwrap{position:relative;border-radius:6px;overflow:hidden;background:var(--mat)}
+svg#stage{display:block;width:100%;height:auto;touch-action:none;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none;cursor:crosshair}
+svg#stage:focus-visible{outline:3px solid var(--yellow);outline-offset:-3px}
+.m-minor{stroke:var(--mat-line);stroke-width:1}
+.m-major{stroke:var(--mat-major);stroke-width:1.2}
+.m-num{fill:var(--mat-major);font:500 9px var(--f-mono)}
+.shape{fill:none;stroke:var(--chalk);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.shape-fill{fill:color-mix(in srgb,var(--chalk) 10%,transparent)}
+.solid{fill:var(--chalk);stroke:none}
+.glyph{fill:var(--chalk)}
+.ghost{fill:none;stroke:var(--magenta);stroke-width:1.6}
+.you{stroke:var(--yellow);stroke-width:2.5;fill:none;stroke-linecap:round}
+.you-fill{fill:var(--yellow)}
+.you-soft{fill:var(--yellow);opacity:.38}
+.chalk-soft{fill:var(--chalk);opacity:.16}
+.ans{stroke:var(--magenta);stroke-width:2.5;fill:none;stroke-linecap:round}
+.ans-fill{fill:var(--magenta)}
+.guide{stroke:var(--magenta);stroke-width:1.2;stroke-dasharray:5 5;fill:none;opacity:.9}
+.bbox{stroke:var(--chalk);stroke-width:1;stroke-dasharray:3 4;fill:none;opacity:.6}
+.lbl{font:500 12px var(--f-mono);fill:var(--chalk)}
+.lbl-y{font:500 13px var(--f-mono);fill:var(--yellow)}
+.lbl-m{font:600 13px var(--f-mono);fill:var(--pink)}
+.paper .lbl-m{fill:var(--magenta)}
+.halo{paint-order:stroke;stroke:var(--mat);stroke-width:5px;stroke-linejoin:round}
+.cap{font:700 13px var(--f-body);fill:var(--chalk);letter-spacing:.08em}
+
+.timer{display:grid;grid-template-columns:1fr 4.5em;gap:12px;align-items:center;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.tbar{height:8px;background:var(--rule);border-radius:4px;overflow:hidden}
+.tbar i{display:block;height:100%;background:var(--ink);transform-origin:left;width:100%}
+.timer span{text-align:right;font-size:15px;font-weight:500}
+.timer.low .tbar i{background:var(--magenta)}
+.timer.low span{color:var(--magenta);animation:pulse .5s ease-in-out infinite alternate}
+@keyframes pulse{to{opacity:.35}}
+.matwrap.low{box-shadow:0 0 0 3px var(--magenta)}
+.matwrap.paper{background:var(--sheet);border:1px solid var(--rule)}
+.paper svg#stage{cursor:ew-resize;touch-action:pan-y}
+.tap svg#stage{touch-action:pan-y}
+.paper .glyph{fill:var(--type)}
+.paper .lbl{fill:var(--muted)}
+.paper .halo{stroke:var(--sheet)}
+.k-move{stroke:var(--type)} .k-fixed{stroke:var(--muted)}
+
+.controls{display:flex;flex-direction:column;gap:10px;min-height:28px}
+.sl{display:grid;grid-template-columns:22px 1fr 44px;align-items:center;gap:12px;font-family:var(--f-mono);font-size:13px;font-variant-numeric:tabular-nums}
+.sl{padding:2px 8px;border-radius:6px;border:1.5px solid transparent}
+.sl.on{border-color:var(--magenta);background:var(--surface)}
+.sl span:last-child{text-align:right;color:var(--muted)}
+input[type=range]{width:100%;height:28px;-webkit-appearance:none;appearance:none;background:transparent;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:10px;border-radius:5px;background:var(--track,var(--rule))}
+input[type=range]::-moz-range-track{height:10px;border-radius:5px;background:var(--track,var(--rule))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;margin-top:-6px;border-radius:50%;background:var(--surface);border:2px solid var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--surface);border:2px solid var(--ink)}
+input[type=range]:focus-visible{outline:2px solid var(--magenta);outline-offset:2px;border-radius:6px}
+.hint{color:var(--muted);font-size:13px;margin:0}
+.padrow{display:flex;flex-direction:column;gap:10px;align-items:center}
+.dpad{flex:none;width:clamp(190px,60vw,250px);aspect-ratio:1;max-width:100%;touch-action:none;user-select:none;-webkit-user-select:none;cursor:pointer}
+.dpad svg{width:100%;height:100%;display:block}
+.pc-only{display:none}
+@media (hover:hover) and (pointer:fine){
+  .dpad{display:none}
+  .touch-row{display:none}
+  .sl.on{border-color:transparent;background:none}
+  .pc-only{display:inline}.touch-only{display:none}
+  .matwrap{max-width:max(320px,calc((100vh - 300px) * 1.5));margin-inline:auto;width:100%}
+}
+.touch-row .dpad{width:clamp(120px,36vw,160px)}
+.touch-row.four .dpad{width:clamp(104px,30vw,132px)}
+.touch-row.four .hint{display:none}
+.touch-row.four .hint{display:none}
+.dp-ring{fill:var(--surface);stroke:var(--rule);stroke-width:1.5}
+.b0{stop-color:#fbfcf9}.b1{stop-color:#c9d2cb}.b2{stop-color:#7f8f86}
+.dp-dots circle{fill:#2d5a4b;opacity:.28}
+.dp-shine{fill:#fff;opacity:.55}
+.dpad.on .dp-ring{stroke:var(--magenta);stroke-width:2.5}
+.padside{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;min-width:0;width:100%;text-align:center}
+.padside .hint{flex-basis:100%;max-width:34em;margin-inline:auto}
+.padside .pad{display:inline-block}
+.padside > button + button{margin-top:0}
+button.pad{min-height:46px;padding:8px 12px;background:var(--surface);color:var(--ink);border:1.5px solid var(--rule);font:500 15px var(--f-body);letter-spacing:0}
+button.pad.sw{border-color:var(--ink)}
+button,.btn{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+@media (pointer:coarse){
+  input[type=range]{height:36px}
+  input[type=range]::-webkit-slider-runnable-track{height:10px;border-radius:5px}
+  input[type=range]::-webkit-slider-thumb{width:26px;height:26px;margin-top:-8px}
+  input[type=range]::-moz-range-thumb{width:24px;height:24px}
+}
+@media (max-width:640px){
+  body{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+  .bar{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--paper);border-top:1px solid var(--rule);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));flex-wrap:nowrap}
+  .bar .actions{flex-wrap:nowrap;margin-left:auto}
+  .bar .big{font-size:34px}
+  .bar .detail{font-size:11px}
+  #act{min-width:116px;min-height:52px}
+  #back{padding:12px 12px;font-size:13px}
+  .prompt{font-size:16px}
+  .timer span{font-size:14px}
+}
+
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.result{display:flex;align-items:baseline;gap:12px;min-width:0}
+.big{font-family:var(--f-display);font-size:44px;line-height:1;font-variant-numeric:tabular-nums}
+.verdict{font-weight:700}
+.detail{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+button{font:700 15px var(--f-body);padding:12px 24px;border-radius:3px;border:2px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer;letter-spacing:.06em;transition:transform .08s}
+button:active,.btn:active{transform:translateY(1px)}
+.btn{display:inline-block;font:700 15px var(--f-body);padding:10px 22px;border-radius:3px;border:2px solid var(--ink);text-decoration:none;letter-spacing:.06em}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn:focus-visible{outline:3px solid var(--magenta);outline-offset:2px}
+#hist{gap:14px}
+.hhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.spark{width:100%;height:auto;display:block}
+.sp-grid{stroke:var(--rule);stroke-width:1}
+.sp-line{fill:none;stroke:var(--magenta);stroke-width:2;stroke-linejoin:round}
+.sp-dot{fill:var(--magenta)} .sp-last{fill:var(--surface);stroke:var(--magenta);stroke-width:2.5}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:12px 10px}
+.thumb{display:flex;flex-direction:column;gap:6px;padding:0;background:none;border:none;color:var(--ink);text-align:left;font:400 13px var(--f-body);letter-spacing:0;cursor:pointer}
+.thumb img{width:100%;aspect-ratio:1200/630;border-radius:4px;background:var(--mat);display:block}
+.thumb b{font-family:var(--f-display);font-weight:400;font-size:18px}
+.thumb small{color:var(--muted);font-family:var(--f-mono);font-size:11px}
+.thumb:focus-visible{outline:3px solid var(--magenta);outline-offset:2px}
+.viewer{position:fixed;inset:0;z-index:20;background:rgba(10,14,12,.72);display:flex;align-items:center;justify-content:center;padding:16px}
+.vbox{background:var(--surface);border-radius:8px;padding:14px;width:min(760px,100%);display:flex;flex-direction:column;gap:12px}
+.vbox img{width:100%;border-radius:4px;display:block}
+.xpost{display:block;text-align:center;padding:14px 16px;font-size:16px;background:var(--ink);color:var(--paper)}
+.subrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.subrow button{padding:12px 6px;font-size:14px;letter-spacing:0;white-space:nowrap}
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.steps li{display:flex;flex-direction:column;gap:6px;min-width:0}
+.steps .sn{font:500 12px var(--f-mono);color:var(--muted);letter-spacing:.1em}
+.steps button,.steps .btn{width:100%;text-align:center;padding:12px 4px;font-size:clamp(12.5px,3.4vw,14px);letter-spacing:0;white-space:nowrap;min-height:48px;flex:1;display:flex;align-items:center;justify-content:center}
+.steps .btn{background:var(--ink);color:var(--paper)}
+.share img{width:100%;max-width:100%;aspect-ratio:1200/630;border-radius:4px;background:var(--mat);display:block}
+button:disabled{opacity:.35;cursor:not-allowed}
+button.ghost{background:transparent;color:var(--ink)}
+button:focus-visible{outline:3px solid var(--magenta);outline-offset:2px}
+
+.panel{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:22px clamp(16px,4vw,32px);display:flex;flex-direction:column;gap:18px}
+.cpick{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.cpl{font-weight:700;font-size:14px}
+.seg{display:flex;width:100%;max-width:440px;border:2px solid var(--ink);border-radius:4px;overflow:hidden}
+.segb{display:flex;flex-direction:column;align-items:center;gap:0;padding:10px 12px;border:0;border-radius:0;background:transparent;color:var(--ink);font:400 13px var(--f-body);letter-spacing:0;flex:1;min-width:0;text-align:center}
+.segb + .segb{border-left:2px solid var(--ink)}
+.segb b{font:500 16px var(--f-mono);letter-spacing:.06em}
+.segb small{font-size:11px;color:var(--muted);line-height:1.35}
+.segb[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.segb[aria-pressed="true"] small{color:var(--paper);opacity:.75}
+.books{margin-top:28px;padding-top:18px;border-top:1px solid var(--rule);display:flex;flex-direction:column;gap:10px}
+.rec{display:flex;flex-direction:column;gap:8px}
+.rec ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.rec a{display:flex;flex-direction:column;gap:1px;padding:10px 12px;border:1.5px solid var(--magenta);border-radius:4px;background:var(--paper);color:var(--ink);text-decoration:none}
+.rec a:focus-visible{outline:3px solid var(--magenta);outline-offset:2px}
+.rec b{font-size:14px;line-height:1.45}.rec span,.rec small{font-size:12px;color:var(--muted);line-height:1.5}
+.books h2{font-size:14px;margin:0;letter-spacing:.08em;color:var(--muted)}
+.books ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.books a{display:flex;flex-direction:column;gap:1px;padding:10px 12px;border:1px solid var(--rule);border-radius:4px;background:var(--surface);color:var(--ink);text-decoration:none;min-height:100%}
+.books a:hover{border-color:var(--ink)}
+.books a:focus-visible{outline:3px solid var(--magenta);outline-offset:2px}
+.books b{font-size:13.5px;line-height:1.45}
+.books span{font-size:12px;color:var(--muted)}
+.books small{font-size:12px;color:var(--muted);line-height:1.5}
+.books .note{font-size:11.5px;color:var(--muted);margin:0}
+@media (max-width:640px){.books{margin-bottom:8px}}
+.panel h2{font-family:var(--f-display);font-weight:400;font-size:clamp(26px,6vw,40px);line-height:1.15;margin:0;text-wrap:balance}
+.panel p{margin:0;max-width:60ch}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:12px}
+.mode{border-top:2px solid var(--ink);padding-top:8px;display:flex;flex-direction:column;gap:2px}
+.mode b{font-size:16px}
+.mode small{color:var(--muted);font-size:12.5px;line-height:1.5}
+.mode code{font-family:var(--f-mono);font-size:11px;color:var(--magenta)}
+.rank{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+.rows{display:flex;flex-direction:column;gap:8px}
+.row{display:grid;grid-template-columns:5.5em 1fr 3em;gap:12px;align-items:center;font-variant-numeric:tabular-nums}
+.row .track{height:12px;background:var(--rule);border-radius:2px;overflow:hidden}
+.row .fill{height:100%;background:var(--magenta)}
+.row span:last-child{font-family:var(--f-mono);text-align:right}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.note{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+
+#main{display:flex;flex-direction:column;gap:14px}
+.playmodes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pm{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:14px 16px;letter-spacing:0;min-width:0}
+.pm b{font-size:17px}
+.pm small{font:400 12px var(--f-body);opacity:.8;line-height:1.45}
+.pm.ranked{background:var(--magenta);border-color:var(--magenta);color:#fff}
+@media (max-width:420px){.playmodes{grid-template-columns:1fr}}
+.rk-tag{color:var(--magenta)!important;font-weight:500}
+.rklist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.rklist li{display:grid;grid-template-columns:2.6em 1fr auto;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--rule);font-variant-numeric:tabular-nums}
+.rklist li:nth-child(-n+3) .rk-n{color:var(--magenta)}
+.rklist li.me{background:color-mix(in srgb,var(--yellow) 22%,transparent)}
+.rk-n{font:400 18px var(--f-display);text-align:right}
+.rklist a{color:var(--ink);text-decoration:none;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rk-s{font:500 16px var(--f-mono)}
+#rkMore{margin-top:12px;width:100%}
+.linkbtn{background:none;border:0;padding:0 0 0 6px;color:var(--muted);text-decoration:underline;font:inherit;letter-spacing:0;cursor:pointer}
+.rkform{display:flex;flex-direction:column;gap:10px}
+.handle{display:flex;align-items:center;border:2px solid var(--ink);border-radius:4px;background:var(--paper);max-width:360px}
+.handle span{padding:0 4px 0 12px;font:500 18px var(--f-mono);color:var(--muted)}
+.handle input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:500 18px var(--f-mono);padding:12px 12px 12px 0;outline:none}
+.handle:focus-within{outline:3px solid var(--magenta);outline-offset:2px}
+.agree{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.5}
+.agree input{width:20px;height:20px;margin:1px 0 0;flex:none;accent-color:var(--magenta)}
+.rk-err{color:var(--magenta);font-weight:700;margin:0;min-height:1em}
+.rk-big{display:flex;align-items:baseline;gap:8px}
+.rk-big span:last-child{font-weight:700}
+.sister{margin-top:6px;font-size:12px;color:var(--muted)}
+.sister a{color:var(--ink)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+
+<div class="app">
+  <header>
+    <div class="mark">
+      <svg class="reg" viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="7"/><line x1="13" y1="1" x2="13" y2="25"/><line x1="1" y1="13" x2="25" y2="13"/></svg>
+      <h1>デザイナーの目</h1>
+    </div>
+    <div class="meta" id="meta"></div>
+  </header>
+  <div class="ticks" id="ticks"></div>
+  <main id="main"></main>
+  <footer class="books" aria-labelledby="booksH">
+    <h2 id="booksH">目を鍛える本</h2>
+    <ul><li><a href="https://www.amazon.co.jp/s?k=%E3%83%8E%E3%83%B3%E3%83%87%E3%82%B6%E3%82%A4%E3%83%8A%E3%83%BC%E3%82%BA%E3%83%BB%E3%83%87%E3%82%B6%E3%82%A4%E3%83%B3%E3%83%96%E3%83%83%E3%82%AF%20%E3%83%AD%E3%83%93%E3%83%B3%E3%83%BB%E3%82%A6%E3%82%A3%E3%83%AA%E3%82%A2%E3%83%A0%E3%82%BA&amp;tag=timing-22" target="_blank" rel="sponsored noopener"><b>ノンデザイナーズ・デザインブック</b><span>ロビン・ウィリアムズ</span><small>デザインの4原則。最初の1冊に</small></a></li><li><a href="https://www.amazon.co.jp/s?k=%E3%82%BF%E3%82%A4%E3%83%9D%E3%82%B0%E3%83%A9%E3%83%95%E3%82%A3%E3%81%AE%E5%9F%BA%E6%9C%AC%E3%83%AB%E3%83%BC%E3%83%AB%20%E5%A4%A7%E5%B4%8E%E5%96%84%E6%B2%BB&amp;tag=timing-22" target="_blank" rel="sponsored noopener"><b>タイポグラフィの基本ルール</b><span>大崎善治</span><small>文字組みと字間の考え方</small></a></li><li><a href="https://www.amazon.co.jp/s?k=%E6%AC%A7%E6%96%87%E6%9B%B8%E4%BD%93%20%E5%B0%8F%E6%9E%97%E7%AB%A0&amp;tag=timing-22" target="_blank" rel="sponsored noopener"><b>欧文書体</b><span>小林章</span><small>欧文の形とスペーシングを知る</small></a></li><li><a href="https://www.amazon.co.jp/s?k=%E9%85%8D%E8%89%B2%E3%81%AE%E8%A8%AD%E8%A8%88%20%E3%82%B8%E3%83%A7%E3%82%BC%E3%83%95%E3%83%BB%E3%82%A2%E3%83%AB%E3%83%90%E3%83%BC%E3%82%B9&amp;tag=timing-22" target="_blank" rel="sponsored noopener"><b>配色の設計</b><span>ジョゼフ・アルバース</span><small>色は隣の色で変わって見える</small></a></li><li><a href="https://www.amazon.co.jp/s?k=%E3%81%AA%E3%82%8B%E3%81%BB%E3%81%A9%E3%83%87%E3%82%B6%E3%82%A4%E3%83%B3%20%E7%AD%92%E4%BA%95%E7%BE%8E%E5%B8%8C&amp;tag=timing-22" target="_blank" rel="sponsored noopener"><b>なるほどデザイン</b><span>筒井美希</span><small>目で見て分かるデザインの理由</small></a></li><li><a href="https://www.amazon.co.jp/s?k=%E3%83%87%E3%82%B6%E3%82%A4%E3%83%B3%E3%81%AE%E3%83%AB%E3%83%BC%E3%83%AB%E3%80%81%E3%83%AC%E3%82%A4%E3%82%A2%E3%82%A6%E3%83%88%E3%81%AE%E3%82%BB%E3%82%AA%E3%83%AA%E3%83%BC%E3%80%82%20%E4%BD%90%E8%97%A4%E5%A5%BD%E5%BD%A6&amp;tag=timing-22" target="_blank" rel="sponsored noopener"><b>デザインのルール、レイアウトのセオリー。</b><span>佐藤好彦</span><small>比率と余白でレイアウトを組む</small></a></li><li><a href="https://www.amazon.co.jp/s?k=AI%E3%82%92%E5%91%B3%E6%96%B9%E3%81%AB%E3%81%99%E3%82%8B%20%E3%83%87%E3%82%B6%E3%82%A4%E3%83%B3%E3%83%AF%E3%83%BC%E3%82%AF%E3%83%95%E3%83%AD%E3%83%BC%E5%AE%9F%E8%B7%B5%E3%82%AC%E3%82%A4%E3%83%89%20%E6%A2%85%E6%9C%AC%E5%91%A8%E4%BD%9C&amp;tag=timing-22" target="_blank" rel="sponsored noopener"><b>AIを味方にする デザインワークフロー実践ガイド</b><span>梅本周作</span><small>AIをデザインの仕事に組み込む</small></a></li></ul>
+    <p class="note">Amazonのアソシエイトとして、適格販売により収入を得ています。</p>
+    <p class="sister">姉妹ゲーム：<a href="/">デザイナーの発想</a>（毎日のお題を○△□だけで表現）</p>
+  </footer>
+</div>
+
+<script>
+const MODES={
+  center:{name:"中心",en:"Center",limit:12},
+  color:{name:"色合わせ",en:"Color",limit:30},
+  angle:{name:"直角",en:"Angle",limit:12},
+  divide:{name:"分割",en:"Divide",limit:15},
+  weight:{name:"太さ",en:"Weight",limit:10},
+  kern:{name:"カーニング",en:"Kerning",limit:30}
+};
+const ORDER=["center","weight","color","divide","angle","kern"];
+const ROUNDS=18, PHI=0.6180339887, GA=137.5078;
+let S={phase:"intro",seed:0,round:0,scores:[],user:null,hsb:null,left:null,sel:1};
+let P=null;
+
+function rng(seed){let a=seed>>>0;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const lerp=(r,a,b)=>a+(b-a)*r();
+const pick=(r,arr)=>arr[Math.floor(r()*arr.length)];
+const shuffle=(r,arr)=>{arr=[...arr];for(let i=arr.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}return arr};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const nearest=(u,c)=>Math.abs(u-c[0])<Math.abs(u-c[1])?c[0]:c[1];
+const $=id=>document.getElementById(id);
+const fmt=(n,d=1)=>Number(n).toFixed(d);
+const rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
+const angDiff=(a,b)=>((a-b)%360+540)%360-180;
+let best=null; try{best=JSON.parse(localStorage.getItem("de-best-v3"))}catch(e){}
+
+const CV=document.createElement("canvas"), CX=CV.getContext("2d",{willReadFrequently:true});
+const fontsReady=(async()=>{try{await Promise.race([Promise.all([
+  document.fonts.load('700 100px "Cormorant Garamond"',"AVOWKLY"),
+  document.fonts.load('700 100px "Zen Kaku Gothic New"',"カフェハートストアデザインメニューロゴタイプアトリエ")]),
+  new Promise(r=>setTimeout(r,2500))])}catch(e){}})();
+
+/* ---------- color math ---------- */
+function hsv2rgb(h,s,v){s/=100;v/=100;const f=n=>{const k=(n+h/60)%6;return v-v*s*Math.max(0,Math.min(k,4-k,1))};return[f(5),f(3),f(1)].map(x=>Math.round(x*255))}
+function rgb2lab([r,g,b]){
+  const l=c=>{c/=255;return c>.04045?Math.pow((c+.055)/1.055,2.4):c/12.92};
+  r=l(r);g=l(g);b=l(b);
+  let x=(r*.4124+g*.3576+b*.1805)/.95047,y=r*.2126+g*.7152+b*.0722,z=(r*.0193+g*.1192+b*.9505)/1.08883;
+  const f=t=>t>.008856?Math.cbrt(t):7.787*t+16/116;
+  x=f(x);y=f(y);z=f(z);return[116*y-16,500*(x-y),200*(y-z)];
+}
+const css=([r,g,b])=>`rgb(${r},${g},${b})`;
+function rgb2hsv([r,g,b]){r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;let h=0;
+  if(d){h=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;h*=60;if(h<0)h+=360}return[Math.round(h)%360,Math.round(mx?d/mx*100:0),Math.round(mx*100)]}
+const cmyk2rgb=([c,m,y,k])=>[c,m,y].map(v=>Math.round(255*(1-v/100)*(1-k/100)));
+function rgb2cmyk([r,g,b]){r/=255;g/=255;b/=255;const k=1-Math.max(r,g,b);if(k>=1)return[0,0,0,100];
+  return[(1-r-k)/(1-k),(1-g-k)/(1-k),(1-b-k)/(1-k),k].map(v=>Math.round(v*100))}
+const CMODELS={
+  hsb:{name:"HSB",sub:"色相・彩度・明るさ",keys:["H","S","B"],max:[360,100,100],toRGB:v=>hsv2rgb(...v),fromRGB:rgb2hsv},
+  rgb:{name:"RGB",sub:"画面の光の3色",keys:["R","G","B"],max:[255,255,255],toRGB:v=>v.map(x=>Math.round(x)),fromRGB:v=>[...v]},
+  cmyk:{name:"CMYK",sub:"印刷のインク",keys:["C","M","Y","K"],max:[100,100,100,100],toRGB:cmyk2rgb,fromRGB:rgb2cmyk}
+};
+let CMODE="hsb";try{const m=localStorage.getItem("de-cmode");if(CMODELS[m])CMODE=m}catch(e){}
+const CM=()=>CMODELS[S.cmode]||CMODELS[CMODE];
+const fmtCol=(M,v)=>M.keys.map((k,i)=>k+v[i]).join(" ");
+
+/* ---------- center: shapes (local box about -50..50) ---------- */
+const circ=(cx,cy,r)=>`M${cx-r},${cy} a${r},${r} 0 1,0 ${2*r},0 a${r},${r} 0 1,0 ${-2*r},0Z`;
+const ngon=(n,r0,r1,rot=0)=>{let s="";for(let i=0;i<n*(r1?2:1);i++){const a=rad(rot-90+i*360/(n*(r1?2:1))),r=r1&&i%2?r1:r0;s+=(i?"L":"M")+fmt(r*Math.cos(a),2)+","+fmt(r*Math.sin(a),2)}return s+"Z"};
+const SHAPES={
+  0:[
+    {id:"circle",name:"円",d:()=>circ(0,0,50)},
+    {id:"ellipse",name:"楕円",d:r=>{const ry=lerp(r,22,34);return`M-50,0 a50,${ry} 0 1,0 100,0 a50,${ry} 0 1,0 -100,0Z`}},
+    {id:"poly",name:"正多角形",d:r=>ngon(Math.floor(lerp(r,5,9)),50)},
+  ],
+  1:[
+    {id:"star",name:"星形",d:r=>ngon(Math.floor(lerp(r,5,8)),50,lerp(r,20,28))},
+    {id:"irr",name:"多角形",d:r=>{const n=Math.floor(lerp(r,5,8));let s="";for(let i=0;i<n;i++){const a=rad(i*360/n+lerp(r,-14,14)),R=lerp(r,26,52);s+=(i?"L":"M")+fmt(R*Math.cos(a),2)+","+fmt(R*Math.sin(a),2)}return s+"Z"}},
+    {id:"L",name:"L字",d:r=>{const t=lerp(r,20,34);return`M-45,-45 L${-45+t},-45 L${-45+t},${45-t} L45,${45-t} L45,45 L-45,45Z`}},
+    {id:"tri",name:"三角形",d:r=>`M${fmt(lerp(r,-50,50))},-45 L50,40 L-50,40Z`},
+  ],
+  2:[
+    {id:"heart",name:"ハート",d:()=>"M0,40 C-42,14 -50,-8 -50,-20 C-50,-40 -30,-48 -16,-42 C-8,-38 -3,-32 0,-26 C3,-32 8,-38 16,-42 C30,-48 50,-40 50,-20 C50,-8 42,14 0,40Z"},
+    {id:"drop",name:"しずく",d:()=>"M0,-52 C14,-28 38,-6 38,16 C38,38 21,50 0,50 C-21,50 -38,38 -38,16 C-38,-6 -14,-28 0,-52Z"},
+    {id:"bubble",name:"吹き出し",d:()=>"M-50,-28 Q-50,-44 -34,-44 L34,-44 Q50,-44 50,-28 L50,8 Q50,24 34,24 L-6,24 L-32,48 L-24,24 L-34,24 Q-50,24 -50,8Z"},
+    {id:"house",name:"家",d:()=>"M0,-48 L50,-4 L36,-4 L36,46 L-36,46 L-36,-4 L-50,-4Z M20,-34 L20,-48 L32,-48 L32,-23Z"},
+    {id:"cloud",name:"雲",d:()=>"M-42,22 L40,22 L40,4 L-42,4Z "+circ(-26,4,20)+" "+circ(4,-10,28)+" "+circ(32,8,16)},
+    {id:"bolt",name:"稲妻",d:()=>"M12,-50 L-30,8 L-4,8 L-16,50 L30,-12 L4,-12 L20,-50Z"},
+    {id:"moon",name:"三日月",d:()=>"M12,-47 A48,48 0 1,0 12,47 A40,48 0 0,1 12,-47Z"},
+    {id:"bell",name:"ベル",d:()=>"M0,-46 C22,-46 30,-28 30,-8 L30,16 L42,30 L-42,30 L-30,16 L-30,-8 C-30,-28 -22,-46 0,-46Z "+circ(0,40,9)},
+  ]
+};
+function rasterStats(d,tf){
+  CV.width=600;CV.height=400;CX.setTransform(1,0,0,1,0,0);CX.clearRect(0,0,600,400);
+  CX.translate(tf.x,tf.y);CX.rotate(rad(tf.r));CX.scale(tf.s,tf.s);CX.fillStyle="#000";CX.fill(new Path2D(d));
+  const D=CX.getImageData(0,0,600,400).data;let sx=0,sy=0,sw=0,x0=600,y0=400,x1=0,y1=0;
+  for(let y=0;y<400;y++)for(let x=0;x<600;x++){const a=D[(y*600+x)*4+3];if(!a)continue;const w=a/255;sx+=(x+.5)*w;sy+=(y+.5)*w;sw+=w;
+    if(a>127){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}}
+  return{c:[sx/sw,sy/sw],bb:[x0,y0,x1+1,y1+1]};
+}
+
+/* ---------- golden: six shape kinds ---------- */
+const G={
+  hsplit:{prompt:"縦線をドラッグして長方形を 1 : 1.618 に分ける",
+    init:r=>{const w=lerp(r,380,500),h=lerp(r,150,230);let s=lerp(r,.3,.7);if(Math.abs(s-PHI)<.08||Math.abs(s-1+PHI)<.08)s=.5;return{x0:300-w/2,y0:200-h/2,w,h,start:300-w/2+w*s}},
+    apply:(p,q)=>clamp(q.x,p.x0+4,p.x0+p.w-4), step:2,
+    truth:(p,u)=>nearest(u,[p.x0+p.w*PHI,p.x0+p.w*(1-PHI)]), err:(p,u,t)=>Math.abs(u-t)/p.w*100,
+    ratio:(p,u)=>{const a=u-p.x0,b=p.w-a;return Math.max(a,b)/Math.max(1,Math.min(a,b))},
+    draw:(p,u,rev,t)=>`<rect class="shape shape-fill" x="${p.x0}" y="${p.y0}" width="${p.w}" height="${p.h}"/>`+(rev?`<line class="ans" x1="${t}" y1="${p.y0-14}" x2="${t}" y2="${p.y0+p.h+14}"/>`:"")+
+      `<line class="you" x1="${u}" y1="${p.y0}" x2="${u}" y2="${p.y0+p.h}"/><rect class="you-fill" x="${u-7}" y="${p.y0+p.h/2-16}" width="14" height="32" rx="3"/>`,
+    lpos:(p,u)=>[u,p.y0+p.h+34]},
+  vsplit:{prompt:"横線をドラッグして長方形を 1 : 1.618 に分ける",
+    init:r=>{const w=lerp(r,150,240),h=lerp(r,290,340);let s=lerp(r,.3,.7);if(Math.abs(s-PHI)<.08||Math.abs(s-1+PHI)<.08)s=.5;return{x0:300-w/2,y0:200-h/2,w,h,start:200-h/2+h*s}},
+    apply:(p,q)=>clamp(q.y,p.y0+4,p.y0+p.h-4), step:2,
+    truth:(p,u)=>nearest(u,[p.y0+p.h*PHI,p.y0+p.h*(1-PHI)]), err:(p,u,t)=>Math.abs(u-t)/p.h*100,
+    ratio:(p,u)=>{const a=u-p.y0,b=p.h-a;return Math.max(a,b)/Math.max(1,Math.min(a,b))},
+    draw:(p,u,rev,t)=>`<rect class="shape shape-fill" x="${p.x0}" y="${p.y0}" width="${p.w}" height="${p.h}"/>`+(rev?`<line class="ans" x1="${p.x0-14}" y1="${t}" x2="${p.x0+p.w+14}" y2="${t}"/>`:"")+
+      `<line class="you" x1="${p.x0}" y1="${u}" x2="${p.x0+p.w}" y2="${u}"/><rect class="you-fill" x="${p.x0+p.w/2-16}" y="${u-7}" width="32" height="14" rx="3"/>`,
+    lpos:(p,u)=>[p.x0+p.w+20,u+5],anchor:"start"},
+  segment:{prompt:"点をドラッグして線分を 1 : 1.618 に分ける",
+    init:r=>{const a=rad(lerp(r,-35,35)),L=lerp(r,380,480),c=[300,200];let s=lerp(r,.3,.7);if(Math.abs(s-PHI)<.08||Math.abs(s-1+PHI)<.08)s=.5;
+      return{a:[c[0]-L/2*Math.cos(a),c[1]-L/2*Math.sin(a)],b:[c[0]+L/2*Math.cos(a),c[1]+L/2*Math.sin(a)],L,start:s}},
+    apply:(p,q)=>{const dx=p.b[0]-p.a[0],dy=p.b[1]-p.a[1];return clamp(((q.x-p.a[0])*dx+(q.y-p.a[1])*dy)/(dx*dx+dy*dy),.01,.99)}, step:.004,
+    truth:(p,u)=>nearest(u,[PHI,1-PHI]), err:(p,u,t)=>Math.abs(u-t)*100,
+    ratio:(p,u)=>Math.max(u,1-u)/Math.min(u,1-u),
+    at:(p,u)=>[p.a[0]+(p.b[0]-p.a[0])*u,p.a[1]+(p.b[1]-p.a[1])*u],
+    draw(p,u,rev,t){const m=this.at(p,u),n=[-(p.b[1]-p.a[1])/p.L,(p.b[0]-p.a[0])/p.L],tk=(q,l,c)=>`<line class="${c}" x1="${q[0]-n[0]*l}" y1="${q[1]-n[1]*l}" x2="${q[0]+n[0]*l}" y2="${q[1]+n[1]*l}"/>`;
+      let s=`<line class="shape" x1="${p.a[0]}" y1="${p.a[1]}" x2="${p.b[0]}" y2="${p.b[1]}"/>`+tk(p.a,12,"shape")+tk(p.b,12,"shape");
+      if(rev)s+=tk(this.at(p,t),20,"ans");return s+`<circle class="you-fill" cx="${m[0]}" cy="${m[1]}" r="9"/>`},
+    lpos(p,u){const m=this.at(p,u);return[m[0],m[1]+38]}},
+  circle:{prompt:"半径をドラッグして円を黄金角 137.5° で分ける",
+    init:r=>{const th=lerp(r,0,360),off=pick(r,[1,-1])*lerp(r,70,110);return{c:[300,200],R:lerp(r,130,160),th,start:th+180+off}},
+    apply:(p,q)=>deg(Math.atan2(q.y-p.c[1],q.x-p.c[0])), step:.6,
+    al:(p,u)=>((u-p.th)%360+360)%360,
+    truth(p,u){return p.th+nearest(this.al(p,u),[GA,360-GA])}, err(p,u,t){return Math.abs(angDiff(u,t))/360*100},
+    ratio(p,u){const a=this.al(p,u);return Math.max(a,360-a)/Math.max(1,Math.min(a,360-a))},
+    draw(p,u,rev,t){const[cx,cy]=p.c,R=p.R,pt=a=>[cx+R*Math.cos(rad(a)),cy+R*Math.sin(rad(a))],a=this.al(p,u),e1=pt(p.th),e2=pt(u);
+      const small=a<180,sec=small?`M${cx},${cy} L${e1} A${R},${R} 0 0,1 ${e2}Z`:`M${cx},${cy} L${e2} A${R},${R} 0 0,1 ${e1}Z`;
+      let s=`<circle class="shape" cx="${cx}" cy="${cy}" r="${R}"/><path class="chalk-soft" d="${sec}"/><line class="shape" x1="${cx}" y1="${cy}" x2="${e1[0]}" y2="${e1[1]}"/>`;
+      if(rev){const e3=pt(t);s+=`<line class="ans" x1="${cx}" y1="${cy}" x2="${e3[0]}" y2="${e3[1]}"/>`}
+      return s+`<line class="you" x1="${cx}" y1="${cy}" x2="${e2[0]}" y2="${e2[1]}"/><circle class="you-fill" cx="${e2[0]}" cy="${e2[1]}" r="9"/><circle cx="${cx}" cy="${cy}" r="4" fill="var(--chalk)"/>`},
+    lpos(p,u){return[p.c[0]+(p.R+30)*Math.cos(rad(u)),p.c[1]+(p.R+30)*Math.sin(rad(u))+5]},anchor:"middle"},
+  grect:{prompt:"上辺をドラッグして黄金長方形（1 : 1.618）にする",
+    init:r=>{const w=lerp(r,260,340),yb=310;const h0=w*PHI,h=pick(r,[h0*lerp(r,.55,.8),h0*lerp(r,1.2,1.4)]);return{x0:300-w/2,w,yb,start:yb-h}},
+    apply:(p,q)=>clamp(q.y,40,p.yb-20), step:1.5,
+    truth:p=>p.yb-p.w*PHI, err:(p,u,t)=>Math.abs(u-t)/(p.w*PHI)*100,
+    ratio:(p,u)=>p.w/(p.yb-u),
+    draw:(p,u,rev,t)=>(rev?`<rect class="guide" x="${p.x0}" y="${t}" width="${p.w}" height="${p.yb-t}"/>`:"")+
+      `<rect class="shape shape-fill" x="${p.x0}" y="${u}" width="${p.w}" height="${p.yb-u}"/><line class="you" x1="${p.x0}" y1="${u}" x2="${p.x0+p.w}" y2="${u}"/><rect class="you-fill" x="${300-16}" y="${u-7}" width="32" height="14" rx="3"/>`,
+    lpos:(p,u)=>[300,p.yb+32],anchor:"middle"},
+  gtri:{prompt:"頂点をドラッグして黄金三角形（辺 : 底辺 = 1.618 : 1）にする",
+    init:r=>{const b=lerp(r,120,165),yb=340,h0=b*Math.sqrt(1/PHI/PHI-.25),h=pick(r,[h0*lerp(r,.6,.8),h0*lerp(r,1.15,1.3)]);return{b,yb,start:Math.max(30,yb-h)}},
+    apply:(p,q)=>clamp(q.y,24,p.yb-30), step:1.5,
+    truth:p=>p.yb-p.b*Math.sqrt(1/PHI/PHI-.25), err:(p,u,t)=>Math.abs(u-t)/(p.yb-t)*100,
+    ratio:(p,u)=>Math.hypot(p.yb-u,p.b/2)/p.b,
+    draw:(p,u,rev,t)=>(rev?`<polygon class="guide" points="${300-p.b/2},${p.yb} ${300+p.b/2},${p.yb} 300,${t}"/>`:"")+
+      `<polygon class="shape shape-fill" points="${300-p.b/2},${p.yb} ${300+p.b/2},${p.yb} 300,${u}"/>`+(rev?`<circle class="ans-fill" cx="300" cy="${t}" r="5"/>`:"")+`<circle class="you-fill" cx="300" cy="${u}" r="9"/>`,
+    lpos:(p,u)=>[300+p.b/2+20,p.yb-10],anchor:"start"}
+};
+const GKINDS=Object.keys(G);
+
+/* ---------- kerning ---------- */
+/* Designer-set spacing (origin positions in em) from the kerning sample book. Truth = average of these and the fitted model. */
+const KDATA={"FLY":[0,0.5389,1.0538],"RAW":[0,0.7898,1.5144],"LAVA":[0,0.6228,1.2806,1.8855],"AVOW":[0,0.6867,1.3718,2.1858],"TYPO":[0,0.7078,1.4046,1.9965],"VOTE":[0,0.5826,1.3242,1.9578],"WAVY":[0,0.7736,1.3808,2.11],"KOALA":[0,0.6499,1.3751,2.1597,2.7629],"VALUE":[0,0.5663,1.3422,1.8846,2.5858],"LATTE":[0,0.5919,1.27,1.94,2.5899],"HOTEL":[0,0.7448,1.4847,2.1303,2.6815],"カフェ":[0,0.8413,1.5377],"ハート":[0,0.9237,1.5615],"ストア":[0,0.7234,1.577],"デザイン":[0,1.0099,1.9289,2.7724],"メニュー":[0,0.7986,1.6127,2.4314],"コーヒー":[0,0.8007,1.5961,2.4185],"アトリエ":[0,0.6713,1.3934,2.1613],"トラベル":[0,0.8036,1.6537,2.6165],"ロゴタイプ":[0,0.7935,1.6965,2.5439,3.3275]};
+const KFIX={"WAVY":[0,0.752,1.2982,2.0108],"RAW":[0,0.7671,1.3744],"LAVA":[0,0.5898,1.2112,1.7735],"AVOW":[0,0.6361,1.3143,2.0584],"VOTE":[0,0.6086,1.343,1.9746],"コーヒー":[0,0.8596,1.7062,2.5804],"アトリエ":[0,0.6775,1.4004,2.2017],"トラベル":[0,0.8113,1.716,2.7216],"VALUE":[0,0.4909,1.2664,1.8408,2.597],"LATTE":[0,0.5898,1.2531,1.9252,2.5928],"HOTEL":[0,0.773,1.5262,2.1543,2.7197],"ロゴタイプ":[0,0.7945,1.7108,2.5511,3.3418],"カフェ":[0,0.8227,1.5377],"KOALA":[0,0.6162,1.3212,2.0776,2.6926]}; // designer-corrected answers, used as-is
+const LATF="'Cormorant Garamond',Georgia,serif",KANAF="'Zen Kaku Gothic New','Hiragino Sans',sans-serif";
+const KTIERS=[["FLY","RAW","LAVA","AVOW","TYPO","VOTE","WAVY"],["カフェ","ハート","ストア","デザイン","メニュー","コーヒー","アトリエ","トラベル"],["KOALA","VALUE","LATTE","HOTEL","ロゴタイプ"]];
+// fitted to the designer's spacing: whitespace counted to a limited depth, deep space weighted by sqrt
+const KMODEL={latin:{D:.25,band:"core",expo:.5},kana:{D:.16,band:"full",expo:.5}};
+function glyph(ch,fam,F){
+  const W=Math.ceil(F*2.2),H=Math.ceil(F*2),ox=Math.round(F*.4),yb=Math.round(F*1.4);
+  CV.width=W;CV.height=H;CX.setTransform(1,0,0,1,0,0);CX.clearRect(0,0,W,H);
+  CX.font=`700 ${F}px ${fam}`;CX.textBaseline="alphabetic";CX.fillStyle="#000";CX.fillText(ch,ox,yb);
+  const D=CX.getImageData(0,0,W,H).data,L=new Int16Array(H).fill(-1),R=new Int16Array(H).fill(-1);
+  let x0=W,x1=-1,y0=H,y1=-1;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(D[(y*W+x)*4+3]>110){if(L[y]<0)L[y]=x;R[y]=x;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}
+  for(let y=0;y<H;y++)if(L[y]>=0){L[y]-=x0;R[y]-=x0}
+  return{ch,inkL:x0-ox,w:x1-x0+1,top:y0,bot:y1,L,R,yb};
+}
+const kmed=a=>{a=[...a].sort((x,y)=>x-y);return a[a.length>>1]};
+function kModel(gs,F,latin,p0,pN){
+  const m=KMODEL[latin?"latin":"kana"],D=m.D*F,n=gs.length;
+  const top=m.band==="core"?kmed(gs.map(g=>g.top)):Math.min(...gs.map(g=>g.top)),bot=m.band==="core"?kmed(gs.map(g=>g.bot)):Math.max(...gs.map(g=>g.bot));
+  const ext=[];for(let i=0;i<n-1;i++){const a=gs[i],b=gs[i+1],e=[];for(let y=top;y<=bot;y++){const ra=a.R[y]>=0?a.w-1-a.R[y]:1e9,lb=b.L[y]>=0?b.L[y]:1e9;e.push(ra+lb)}ext.push(e)}
+  const area=(i,o)=>{let s=0;for(const e of ext[i])s+=Math.sqrt(Math.max(0,Math.min(e+o,D+o)));return s};
+  const solveO=(i,A)=>{let lo=-.5*F,hi=F;for(let k=0;k<36;k++){const md=(lo+hi)/2;area(i,md)<A?lo=md:hi=md}return(lo+hi)/2};
+  const G=pN-p0-gs.slice(0,n-1).reduce((s,g)=>s+g.w,0);
+  let lo=0,hi=1e6;for(let k=0;k<44;k++){const A=(lo+hi)/2;ext.reduce((t,_,i)=>t+solveO(i,A),0)<G?lo=A:hi=A}
+  const A=(lo+hi)/2,q=[p0];for(let i=1;i<n;i++)q.push(q[i-1]+gs[i-1].w+solveO(i-1,A));return q;
+}
+/* Blended auto-kerning (tested against the designer's spacing):
+   Latin = 50% area model + 50% circle packing (larger circles near the letters);
+   Kana  = 60% area model + 40% even-grey (blurred darkness as flat as possible). Ends stay fixed. */
+function kPair(a,b,top,bot){const ra=[],lb=[];for(let y=top;y<=bot;y++){ra.push(a.R[y]>=0?a.w-1-a.R[y]:1e9);lb.push(b.L[y]>=0?b.L[y]:1e9)}return{ra,lb}}
+function kPack(pp,o,D,r,lim){ // edge-first packing, circles shrink with distance from the letters
+  const H=pp.ra.length,win=Math.ceil(D+2*r),x0=-win,W=Math.ceil(o)+2*win+1,BIG=1e9,d=new Float32Array(W*H);
+  for(let y=0;y<H;y++){const L=-pp.ra[y],R=o+pp.lb[y];for(let x=0;x<W;x++){const X=x+x0;d[y*W+x]=X<=L||X>=R?0:BIG}}
+  const at=(x,y)=>x<0||x>=W||y<0||y>=H?BIG:d[y*W+x];
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){let v=d[y*W+x];if(!v)continue;v=Math.min(v,at(x-1,y)+1,at(x,y-1)+1,at(x-1,y-1)+1.414,at(x+1,y-1)+1.414);d[y*W+x]=v}
+  for(let y=H-1;y>=0;y--)for(let x=W-1;x>=0;x--){let v=d[y*W+x];if(!v)continue;v=Math.min(v,at(x+1,y)+1,at(x,y+1)+1,at(x+1,y+1)+1.414,at(x-1,y+1)+1.414);d[y*W+x]=v}
+  const rad=v=>Math.max(r*.3,r*(1-Math.max(0,v-r)/r)),cand=[];
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){const v=d[y*W+x],X=x+x0;if(v<BIG/2&&v<=D+r&&X>=-lim&&X<=o+lim){const rr=rad(v);if(v>=rr*.9)cand.push([v,x,y,rr])}}
+  cand.sort((p,q)=>p[0]-q[0]||p[2]-q[2]||p[1]-q[1]);
+  const cs=2*r,grid=new Map();let n=0;
+  for(const[,x,y,rr]of cand){const gx=Math.floor(x/cs),gy=Math.floor(y/cs);let ok=true;
+    for(let i=-1;i<=1&&ok;i++)for(let j=-1;j<=1&&ok;j++){const c=grid.get((gx+i)+","+(gy+j));if(c)for(const[px,py,pr]of c){const m=.9*(rr+pr);if((px-x)**2+(py-y)**2<m*m){ok=false;break}}}
+    if(!ok)continue;n++;const k=gx+","+gy;(grid.get(k)||grid.set(k,[]).get(k)).push([x,y,rr])}
+  return n;
+}
+function kCircle(gs,F,p0,pN){
+  const n=gs.length,top=kmed(gs.map(g=>g.top)),bot=kmed(gs.map(g=>g.bot)),r=Math.max(1.5,F*.03),D=F*.15,lim=F*.12;
+  const tab=[];for(let i=0;i<n-1;i++){const pp=kPair(gs[i],gs[i+1],top,bot),t=[];let mx=0;
+    for(let o=Math.round(-.12*F);o<=Math.round(.6*F);o+=2){mx=Math.max(mx,kPack(pp,o,D,r,lim));t.push([o,mx])}tab.push(t)}
+  const oFor=(i,A)=>{const t=tab[i];for(let k=0;k<t.length;k++)if(t[k][1]>=A){if(!k)return t[0][0];const[o0,a0]=t[k-1],[o1,a1]=t[k];return a1===a0?o1:o0+(A-a0)/(a1-a0)}return t.at(-1)[0]};
+  const G=pN-p0-gs.slice(0,n-1).reduce((s,g)=>s+g.w,0);let lo=0,hi=Math.max(...tab.map(t=>t.at(-1)[1]));
+  for(let k=0;k<40;k++){const A=(lo+hi)/2;tab.reduce((s,_,i)=>s+oFor(i,A),0)<G?lo=A:hi=A}
+  const A=(lo+hi)/2,x=[p0];for(let i=1;i<n;i++)x.push(x[i-1]+gs[i-1].w+oFor(i-1,A));return x;
+}
+function kGrey(gs,F,fam,p0,pN){
+  const n=gs.length,top=Math.min(...gs.map(g=>g.top)),bot=Math.max(...gs.map(g=>g.bot)),sig=Math.max(1,F*.04);
+  const cols=gs.map(g=>{const Wd=Math.ceil(F*2.2),H=Math.ceil(F*2),ox=Math.round(F*.4),yb=Math.round(F*1.4);
+    CV.width=Wd;CV.height=H;CX.setTransform(1,0,0,1,0,0);CX.clearRect(0,0,Wd,H);CX.font=`700 ${F}px ${fam}`;CX.textBaseline="alphabetic";CX.fillStyle="#000";CX.fillText(g.ch,ox,yb);
+    const D=CX.getImageData(0,0,Wd,H).data,x0=ox+g.inkL,c=new Float32Array(g.w);
+    for(let y=top;y<=bot;y++)for(let X=0;X<g.w;X++)if(D[(y*Wd+X+x0)*4+3]>110)c[X]++;return c});
+  const total=Math.ceil(pN-p0+gs[n-1].w)+4,rad=Math.ceil(sig*2.5),ker=[];for(let i=-rad;i<=rad;i++)ker.push(Math.exp(-i*i/(2*sig*sig)));
+  const cost=x=>{const a=new Float32Array(total);cols.forEach((c,i)=>{const s=Math.round(x[i]-p0);for(let j=0;j<c.length;j++){const t=s+j;if(t>=0&&t<total)a[t]+=c[j]}});
+    const s0=Math.round(gs[0].w/2),s1=Math.round(x[n-1]-p0+gs[n-1].w/2);let m=0,c=0;const b=new Float32Array(total);
+    for(let t=s0;t<s1;t++){let v=0;for(let k=-rad;k<=rad;k++){const u=t+k;if(u>=0&&u<total)v+=a[u]*ker[k+rad]}b[t]=v;m+=v;c++}m/=c;let v=0;for(let t=s0;t<s1;t++)v+=(b[t]-m)**2;return v/c};
+  const G=pN-p0-gs.slice(0,n-1).reduce((s,g)=>s+g.w,0);let x=[p0];for(let i=1;i<n;i++)x.push(x[i-1]+gs[i-1].w+G/(n-1));
+  for(const f of[.08,.03,.012,.005]){const step=F*f;for(let it=0;it<12;it++)for(let i=1;i<n-1;i++){let best=cost(x),bx=x[i];
+    for(const dd of[-step,step]){const t=x.slice();t[i]+=dd;if(t[i]-t[i-1]<gs[i-1].w-.2*F||t[i+1]-t[i]<gs[i].w-.2*F)continue;const c=cost(t);if(c<best){best=c;bx=t[i]}}x[i]=bx}}
+  return x;
+}
+function kPocket(gs,F,x,k){ // open up pairs with a big one-sided pocket (L–A, T–Y, F–L, R–A); ends stay fixed
+  const n=gs.length,D=F*.25,top=kmed(gs.map(g=>g.top)),bot=kmed(gs.map(g=>g.bot)),o=[];
+  for(let i=0;i<n-1;i++){const a=gs[i],b=gs[i+1];let mn=1e9,sum=0,c=0;
+    for(let y=top;y<=bot;y++){const ra=a.R[y]>=0?a.w-1-a.R[y]:1e9,lb=b.L[y]>=0?b.L[y]:1e9;mn=Math.min(mn,ra+lb);sum+=Math.min(ra,D)+Math.min(lb,D);c++}
+    o.push(x[i+1]-x[i]-a.w+k*Math.max(0,sum/c-Math.min(mn,2*D)))}
+  const keep=x[n-1]-x[0]-gs.slice(0,n-1).reduce((s,g)=>s+g.w,0),add=(keep-o.reduce((s,v)=>s+v,0))/(n-1),y=[x[0]];
+  for(let i=1;i<n;i++)y.push(y[i-1]+gs[i-1].w+o[i-1]+add);return y}
+function kAuto(gs,F,latin,fam,p0,pN){const a=kModel(gs,F,latin,p0,pN),b=latin?kCircle(gs,F,p0,pN):kGrey(gs,F,fam,p0,pN),m=latin?.5:.4,x=a.map((v,i)=>(1-m)*v+m*b[i]);return latin?kPocket(gs,F,x,.35):x}
+function makeKern(r,k){
+  const word=pick(r,KTIERS[k]),latin=/[A-Z]/.test(word),fam=latin?LATF:KANAF,chars=[...word],fix=KFIX[word],em=fix||KDATA[word],n=chars.length;
+  let gs=chars.map(c=>glyph(c,fam,100));
+  const w100=em[n-1]*100+gs[n-1].inkL+gs[n-1].w-gs[0].inkL;
+  const F=Math.floor(Math.min(130,100*470/w100));
+  gs=chars.map(c=>glyph(c,fam,F));
+  const pu=em.map((e,i)=>e*F+gs[i].inkL-gs[0].inkL),pm=fix?null:kAuto(gs,F,latin,fam,pu[0],pu[n-1]);
+  let truth=fix?[...pu]:pu.map((v,i)=>(v+pm[i])/2);
+  const sh=300-(truth[0]+truth[n-1]+gs[n-1].w)/2;truth=truth.map(v=>v+sh);
+  const start=truth.map((t,i)=>i===0||i===n-1?t:t+pick(r,[1,-1])*lerp(r,.05,.12)*F);
+  for(let i=1;i<n-1;i++)start[i]=clamp(start[i],start[i-1]+gs[i-1].w-.06*F,truth[i+1]-gs[i].w+.06*F);
+  const top=Math.min(...gs.map(g=>g.top)),bot=Math.max(...gs.map(g=>g.bot));
+  return{mode:"kern",word,fam,F,gs,top,bot,truth,start,baseSVG:200-((top+bot)/2-gs[0].yb),
+    prompt:latin?"字間がそろって見えるよう調整（両端は固定）":"字間を詰めて、そろって見えるよう調整（両端は固定）"};
+}
+function kClamp(p,x,i,v){return clamp(v,x[i-1]+p.gs[i-1].w-.15*p.F,x[i+1]-p.gs[i].w+.15*p.F)}
+
+/* ---------- divide: half / thirds / golden on 1-D shapes ---------- */
+const DIVT={half:{goal:"2等分する",truth:[.5],tol:5},third:{goal:"3等分する",truth:[1/3,2/3],tol:6},golden:{goal:"1 : 1.618 に分ける",tol:7}};
+const divTruth=(tp,us)=>tp==="golden"?[nearest(us[0],[PHI,1-PHI])]:DIVT[tp].truth;
+function divStart(r,tp){
+  if(tp==="half")return[pick(r,[lerp(r,.24,.4),lerp(r,.6,.76)])];
+  if(tp==="third")return[lerp(r,.14,.25),lerp(r,.43,.57)];
+  let s=lerp(r,.3,.7);if(Math.abs(s-PHI)<.08||Math.abs(s-1+PHI)<.08)s=.5;return[s];
+}
+function divParts(us,tp){const a=[...us].sort((x,y)=>x-y),seg=[];let prev=0;for(const t of a){seg.push(t-prev);prev=t}seg.push(1-prev);
+  const s=seg.map(v=>fmt(v*100)+"%").join(" : ");return tp==="golden"?`${s}（1 : ${fmt(Math.max(...seg)/Math.min(...seg),3)}）`:s}
+const LIN={
+  hsplit:{verb:"縦線を",noun:"長方形",
+    init:r=>{const w=lerp(r,380,500),h=lerp(r,150,230);return{x0:300-w/2,y0:190-h/2,w,h}},
+    base:p=>`<rect class="shape shape-fill" x="${p.x0}" y="${p.y0}" width="${p.w}" height="${p.h}"/>`,
+    hand:(p,t,c)=>{const x=p.x0+p.w*t;return c==="ans"?`<line class="ans" x1="${x}" y1="${p.y0-14}" x2="${x}" y2="${p.y0+p.h+14}"/>`:`<line class="you" x1="${x}" y1="${p.y0}" x2="${x}" y2="${p.y0+p.h}"/><rect class="you-fill" x="${x-7}" y="${p.y0+p.h/2-16}" width="14" height="32" rx="3"/>`},
+    param:(p,q)=>(q.x-p.x0)/p.w},
+  vsplit:{verb:"横線を",noun:"長方形",
+    init:r=>{const w=lerp(r,160,240),h=lerp(r,240,290);return{x0:300-w/2,y0:180-h/2,w,h}},
+    base:p=>`<rect class="shape shape-fill" x="${p.x0}" y="${p.y0}" width="${p.w}" height="${p.h}"/>`,
+    hand:(p,t,c)=>{const y=p.y0+p.h*t;return c==="ans"?`<line class="ans" x1="${p.x0-14}" y1="${y}" x2="${p.x0+p.w+14}" y2="${y}"/>`:`<line class="you" x1="${p.x0}" y1="${y}" x2="${p.x0+p.w}" y2="${y}"/><rect class="you-fill" x="${p.x0+p.w/2-16}" y="${y-7}" width="32" height="14" rx="3"/>`},
+    param:(p,q)=>(q.y-p.y0)/p.h},
+  segment:{verb:"点を",noun:"線分",
+    init:r=>{const a=rad(lerp(r,-35,35)),L=lerp(r,380,480);return{a:[300-L/2*Math.cos(a),185-L/2*Math.sin(a)],b:[300+L/2*Math.cos(a),185+L/2*Math.sin(a)],L}},
+    at:(p,t)=>[p.a[0]+(p.b[0]-p.a[0])*t,p.a[1]+(p.b[1]-p.a[1])*t],
+    tick(p,q,l,c){const n=[-(p.b[1]-p.a[1])/p.L,(p.b[0]-p.a[0])/p.L];return`<line class="${c}" x1="${q[0]-n[0]*l}" y1="${q[1]-n[1]*l}" x2="${q[0]+n[0]*l}" y2="${q[1]+n[1]*l}"/>`},
+    base(p){return`<line class="shape" x1="${p.a[0]}" y1="${p.a[1]}" x2="${p.b[0]}" y2="${p.b[1]}"/>`+this.tick(p,p.a,12,"shape")+this.tick(p,p.b,12,"shape")},
+    hand(p,t,c){const m=this.at(p,t);return c==="ans"?this.tick(p,m,20,"ans"):`<circle class="you-fill" cx="${m[0]}" cy="${m[1]}" r="9"/>`},
+    param:(p,q)=>{const dx=p.b[0]-p.a[0],dy=p.b[1]-p.a[1];return((q.x-p.a[0])*dx+(q.y-p.a[1])*dy)/(dx*dx+dy*dy)}},
+  circle:{verb:"半径を",noun:"円",
+    init:r=>({c:[300,180],R:lerp(r,120,150),th:lerp(r,0,360)}),
+    pt:(p,t,R)=>[p.c[0]+R*Math.cos(rad(p.th+360*t)),p.c[1]+R*Math.sin(rad(p.th+360*t))],
+    base(p){const e=this.pt(p,0,p.R);return`<circle class="shape" cx="${p.c[0]}" cy="${p.c[1]}" r="${p.R}"/><line class="shape" x1="${p.c[0]}" y1="${p.c[1]}" x2="${e[0]}" y2="${e[1]}"/><circle cx="${p.c[0]}" cy="${p.c[1]}" r="4" fill="var(--chalk)"/>`},
+    hand(p,t,c){const e=this.pt(p,t,p.R);return`<line class="${c}" x1="${p.c[0]}" y1="${p.c[1]}" x2="${e[0]}" y2="${e[1]}"/>`+(c==="you"?`<circle class="you-fill" cx="${e[0]}" cy="${e[1]}" r="9"/>`:"")},
+    param:(p,q)=>(((deg(Math.atan2(q.y-p.c[1],q.x-p.c[0]))-p.th)%360)+360)%360/360}
+};
+
+/* ---------- weight: spot the one line of a different stroke weight ---------- */
+function makeWeight(r,k){
+  const n=[6,8,9][k],bw=lerp(r,6,9),dd=[.3,.18,.11][k]*pick(r,[1,-1]),odd=Math.floor(r()*n),L=[];
+  const orient=k===0?pick(r,["v","h"]):k===1?"d":"mix";
+  for(let i=0;i<n;i++){
+    if(orient==="v"){const x=110+i*380/(n-1);L.push([x,80,x,310])}
+    else if(orient==="h"){const y=60+i*260/(n-1);L.push([130,y,470,y])}
+    else if(orient==="d"){const a=rad(pick(rng(S.seed+k),[40,50,130,140])),dx=Math.cos(a),dy=Math.sin(a),o=(i-(n-1)/2)*40,cx=300-dy*o,cy=190+dx*o;L.push([cx-dx*110,cy-dy*110,cx+dx*110,cy+dy*110])}
+    else{const cx=150+(i%3)*150,cy=75+Math.floor(i/3)*112,a=rad(pick(r,[0,30,45,60,90,120,135,150]));L.push([cx-Math.cos(a)*48,cy-Math.sin(a)*48,cx+Math.cos(a)*48,cy+Math.sin(a)*48])}
+  }
+  return{mode:"weight",lines:L,odd,bw,ow:bw*(1+dd),dd,prompt:"1本だけ太さが違う線をタップ"};
+}
+function segDist(q,[x1,y1,x2,y2]){const dx=x2-x1,dy=y2-y1,t=clamp(((q.x-x1)*dx+(q.y-y1)*dy)/(dx*dx+dy*dy),0,1);return Math.hypot(q.x-x1-dx*t,q.y-y1-dy*t)}
+
+/* ---------- puzzles ---------- */
+function makePuzzle(i){
+  const r=rng(S.seed*131+i*7919+1),mode=ORDER[i%6],k=Math.floor(i/6);
+  if(mode==="center"){
+    const sh=pick(r,SHAPES[k]),d=sh.d(r);
+    const tf={x:lerp(r,230,370),y:lerp(r,175,225),r:sh.id==="circle"?0:lerp(r,-180,180),s:lerp(r,1.95,2.6)};
+    if(k===2)tf.r=lerp(r,-30,30);
+    const st=rasterStats(d,tf);
+    return{mode,k,sh,d,tf,truth:st.c,bb:st.bb,tol:[20,26,30][k],
+      prompt:k===2?`この${sh.name}アイコンの重心（面積の中心）をタップ`:`この${sh.name}の重心（面積の中心）をタップ`};
+  }
+  if(mode==="color"){
+    const t=[Math.round(lerp(r,0,360)),Math.round(lerp(r,30,92)),Math.round(lerp(r,38,92))];
+    return{mode,target:t,start:[Math.round((t[0]+lerp(r,60,300))%360),50,50],prompt:"左の見本と同じ色をつくる"};
+  }
+  if(mode==="angle"){
+    const vx=lerp(r,250,350),vy=lerp(r,175,225),th=lerp(r,0,360),side=r()<.5?1:-1,off=lerp(r,14,32)*(r()<.5?1:-1);
+    return{mode,vx,vy,th,L:140,start:th+side*(90+off),prompt:"アンカーをドラッグして 90° をつくる"};
+  }
+  if(mode==="divide"){
+    const tp=shuffle(rng(S.seed*7+3),["half","third","golden"])[k];
+    if(tp==="golden"&&r()<.4){const kind=pick(r,["grect","gtri"]),g=G[kind],p=g.init(r);return Object.assign(p,{mode,kind,g,tp,special:true,prompt:g.prompt})}
+    const kind=shuffle(rng(S.seed*11+5),Object.keys(LIN))[k],lin=LIN[kind],p=lin.init(r);
+    return Object.assign(p,{mode,kind,lin,tp,start:divStart(r,tp),prompt:`${lin.verb}ドラッグして${lin.noun}を${DIVT[tp].goal}`});
+  }
+  if(mode==="weight")return makeWeight(r,k);
+  return makeKern(r,k);
+}
+
+/* ---------- SVG helpers ---------- */
+function matGrid(){
+  let s="";
+  for(let x=0;x<=600;x+=20)s+=`<line class="${x%100?'m-minor':'m-major'}" x1="${x}" y1="0" x2="${x}" y2="400"/>`;
+  for(let y=0;y<=400;y+=20)s+=`<line class="${y%100?'m-minor':'m-major'}" x1="0" y1="${y}" x2="600" y2="${y}"/>`;
+  for(let x=100;x<600;x+=100)s+=`<text class="m-num" x="${x+3}" y="11">${x/10}</text>`;
+  for(let y=100;y<400;y+=100)s+=`<text class="m-num" x="3" y="${y-3}">${y/10}</text>`;
+  return s;
+}
+const cross=(x,y,c,r=11)=>`<g class="${c}"><line x1="${x-r}" y1="${y}" x2="${x+r}" y2="${y}"/><line x1="${x}" y1="${y-r}" x2="${x}" y2="${y+r}"/><circle cx="${x}" cy="${y}" r="${r*.55}"/></g>`;
+function txt(x,y,s,c="lbl",anchor="start"){x=clamp(x,8,592);y=clamp(y,18,392);return`<text class="${c} halo" x="${x}" y="${y}" text-anchor="${anchor}">${s}</text>`}
+
+/* ---------- rendering ---------- */
+function drawStage(rev){
+  const p=P,u=S.user;let g="";
+  if(p.mode==="center"){
+    const{tf}=p,[tx,ty]=p.truth;
+    g+=`<path class="${p.k===2?'solid':'shape shape-fill'}" vector-effect="non-scaling-stroke" transform="translate(${tf.x},${tf.y}) rotate(${tf.r}) scale(${tf.s})" d="${p.d}"/>`;
+    if(rev){
+      const[b0,b1,b2,b3]=p.bb,bx=(b0+b2)/2,by=(b1+b3)/2;
+      g+=`<rect class="bbox" x="${b0}" y="${b1}" width="${b2-b0}" height="${b3-b1}"/>`;
+      if(Math.hypot(bx-tx,by-ty)>5)g+=`<circle cx="${bx}" cy="${by}" r="4" fill="none" stroke="var(--chalk)" stroke-width="1.5"/>`+txt(bx+8,by-8,"外接枠の中心","lbl");
+      if(u)g+=`<line class="ans" stroke-dasharray="2 4" x1="${u[0]}" y1="${u[1]}" x2="${tx}" y2="${ty}"/>`;
+      g+=cross(tx,ty,"ans");
+    }
+    if(u)g+=cross(u[0],u[1],"you");
+    if(rev)g+=txt(tx+16,ty-14,"重心","lbl-m")+(u?txt(u[0]+16,u[1]+24,`ズレ ${fmt(Math.hypot(u[0]-tx,u[1]-ty))}px`,"lbl-y"):"");
+  }
+  if(p.mode==="color"){
+    const M=CM(),yc=css(M.toRGB(S.col)),tc=css(hsv2rgb(...p.target));
+    g+=`<rect x="50" y="70" width="235" height="235" rx="4" fill="${tc}"/><rect x="315" y="70" width="235" height="235" rx="4" fill="${yc}"/>`;
+    g+=`<text class="cap" x="50" y="56">見本</text><text class="cap" x="315" y="56">あなた</text>`;
+    if(rev)g+=txt(50,335,fmtCol(M,M.fromRGB(hsv2rgb(...p.target))),"lbl-m")+txt(315,335,fmtCol(M,S.col),"lbl-y");
+  }
+  if(p.mode==="angle"){
+    const{vx,vy,th,L}=p,a=u;
+    const e1=[vx+L*Math.cos(rad(th)),vy+L*Math.sin(rad(th))],e2=[vx+L*Math.cos(rad(a)),vy+L*Math.sin(rad(a))];
+    g+=`<line class="shape" x1="${vx}" y1="${vy}" x2="${e1[0]}" y2="${e1[1]}"/>`;
+    if(rev){
+      const d=angDiff(a,th),tgt=th+(d>=0?90:-90),t2=[vx+L*Math.cos(rad(tgt)),vy+L*Math.sin(rad(tgt))];
+      const s=18,c1=[vx+s*Math.cos(rad(th)),vy+s*Math.sin(rad(th))],c3=[vx+s*Math.cos(rad(tgt)),vy+s*Math.sin(rad(tgt))],c2=[c1[0]+c3[0]-vx,c1[1]+c3[1]-vy];
+      g+=`<line class="guide" x1="${vx}" y1="${vy}" x2="${t2[0]}" y2="${t2[1]}"/><polyline class="ans" points="${[c1,c2,c3].map(q=>q.join(",")).join(" ")}"/>`;
+    }
+    g+=`<line class="you" x1="${vx}" y1="${vy}" x2="${e2[0]}" y2="${e2[1]}"/><circle class="you-fill" cx="${e2[0]}" cy="${e2[1]}" r="9"/><circle cx="${vx}" cy="${vy}" r="4" fill="var(--chalk)"/>`;
+    if(rev)g+=txt(e2[0]+(e2[0]>vx?14:-14),e2[1]+(e2[1]>vy?22:-14),`${fmt(Math.abs(angDiff(a,th)))}°`,"lbl-y",e2[0]>vx?"start":"end");
+  }
+  if(p.mode==="divide"&&!p.special){
+    g+=p.lin.base(p);
+    if(rev)divTruth(p.tp,[...u].sort((a,b)=>a-b)).forEach(t=>g+=p.lin.hand(p,t,"ans"));
+    u.forEach(t=>g+=p.lin.hand(p,t,"you"));
+    if(rev){const tr=p.tp==="golden"?divTruth(p.tp,u):DIVT[p.tp].truth;g+=txt(300,368,"あなた "+divParts(u,p.tp),"lbl-y","middle")+txt(300,388,"正解　 "+divParts(tr,p.tp),"lbl-m","middle")}
+  }
+  if(p.mode==="weight"){
+    p.lines.forEach((l,i)=>{const w=i===p.odd?p.ow:p.bw;g+=`<line stroke="${rev&&i===p.odd?"var(--magenta)":"var(--chalk)"}" stroke-width="${w}" x1="${l[0]}" y1="${l[1]}" x2="${l[2]}" y2="${l[3]}"/>`});
+    if(u!=null){const l=p.lines[u],dx=l[2]-l[0],dy=l[3]-l[1],d=Math.hypot(dx,dy);g+=`<circle class="you-fill" cx="${l[2]+dx/d*16}" cy="${l[3]+dy/d*16}" r="7"/><circle class="you-fill" cx="${l[0]-dx/d*16}" cy="${l[1]-dy/d*16}" r="7"/>`}
+    if(rev)g+=txt(300,388,`太さ ${fmt(p.bw)} に対して ${fmt(p.ow)}（${p.dd>0?"+":""}${Math.round(p.dd*100)}%）`,"lbl-m","middle");
+  }
+  if(p.mode==="divide"&&p.special){
+    const k=p.g,t=rev?k.truth(p,u):null;
+    g+=k.draw(p,u,rev,t);
+    if(rev){const[lx,ly]=k.lpos(p,u);g+=txt(lx,ly,`1 : ${fmt(k.ratio(p,u),3)}`,"lbl-y",k.anchor||"middle")+txt(lx,ly+18,`正解 1 : 1.618`,"lbl-m",k.anchor||"middle")}
+  }
+  if(p.mode==="kern"){
+    const x=u,n=p.gs.length,ul=p.bot-p.gs[0].yb+p.baseSVG+16;
+    if(rev)p.gs.forEach((gl,i)=>{if(i&&i<n-1)g+=`<text class="ghost" x="${p.truth[i]-gl.inkL}" y="${p.baseSVG}" style="font:700 ${p.F}px ${p.fam}">${gl.ch}</text>`});
+    p.gs.forEach((gl,i)=>{g+=`<text class="glyph" x="${x[i]-gl.inkL}" y="${p.baseSVG}" style="font:700 ${p.F}px ${p.fam}">${gl.ch}</text>`});
+    p.gs.forEach((gl,i)=>{const fixed=!i||i===n-1,on=!rev&&S.sel===i;
+      g+=`<line class="${fixed?"k-fixed":"k-move"}" stroke-width="${on?4:2}" opacity="${fixed?.35:on?1:.5}" x1="${x[i]}" y1="${ul}" x2="${x[i]+gl.w}" y2="${ul}"/>`});
+    if(rev)for(let i=0;i<n-1;i++){const d=Math.round(((x[i+1]-x[i])-(p.truth[i+1]-p.truth[i]))/p.F*1000),cx=(x[i]+p.gs[i].w+x[i+1])/2;
+      g+=txt(cx,ul+30,`${d>0?"+":""}${d}`,Math.abs(d)>=30?"lbl-m":"lbl","middle")}
+    if(rev)g+=txt(20,ul+30,"字間の差 /1000em","lbl");
+  }
+  $("layer").innerHTML=g;
+}
+
+function score(){
+  const p=P,u=S.user;
+  if(p.mode==="center"){if(!u)return{s:0,d:"未回答"};const e=Math.hypot(u[0]-p.truth[0],u[1]-p.truth[1]);return{s:100*(1-e/p.tol),d:`ズレ ${fmt(e)}px`}}
+  if(p.mode==="color"){const a=rgb2lab(hsv2rgb(...p.target)),b=rgb2lab(CM().toRGB(S.col));const e=Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]);return{s:100-e*2.6,d:`ΔE ${fmt(e)}`}}
+  if(p.mode==="angle"){const a=Math.abs(angDiff(u,p.th)),e=Math.abs(a-90);return{s:100*(1-e/12),d:`${fmt(a)}° · ズレ ${fmt(e)}°`}}
+  if(p.mode==="divide"&&p.special){const t=p.g.truth(p,u),e=p.g.err(p,u,t);return{s:100*(1-e/20),d:`1 : ${fmt(p.g.ratio(p,u),3)} · ズレ ${fmt(e)}%`}}
+  if(p.mode==="divide"){const us=[...u].sort((a,b)=>a-b),tr=divTruth(p.tp,us);const e=us.reduce((a,t,i)=>a+Math.abs(t-tr[i]),0)/us.length*100;return{s:100*(1-e/DIVT[p.tp].tol),d:`ズレ ${fmt(e)}%`}}
+  if(p.mode==="weight"){const pc=`差 ${Math.round(Math.abs(p.dd)*100)}%`;if(u==null)return{s:0,d:"未回答 · "+pc};const used=MODES.weight.limit-S.left;return u===p.odd?{s:used<=3?100:100-30*(used-3)/(MODES.weight.limit-3),d:`正解 · ${pc} · ${fmt(used)}秒`}:{s:0,d:"不正解 · "+pc}}
+  let err=0;const n=p.gs.length;for(let i=1;i<n-1;i++)err+=Math.abs(u[i]-p.truth[i]);err=err/(n-2)/p.F*1000;
+  return{s:100*(1-err/110),d:`平均ズレ ${Math.round(err)}/1000em`};
+}
+const verdict=s=>s>=92?"完璧":s>=78?"いい目":s>=55?"惜しい":s>=30?"まだ甘い":"見直そう";
+const rankOf=a=>a>=90?["アートディレクター","ART DIRECTOR"]:a>=80?["シニアデザイナー","SENIOR DESIGNER"]:a>=68?["デザイナー","DESIGNER"]:a>=52?["ジュニアデザイナー","JUNIOR DESIGNER"]:["インターン","INTERN"];
+
+/* ---------- timer ---------- */
+let raf=null,last=0;
+function startTimer(){stopTimer();last=performance.now();raf=requestAnimationFrame(tick)}
+function stopTimer(){if(raf)cancelAnimationFrame(raf);raf=null}
+function tick(now){
+  S.left=Math.max(0,S.left-(now-last)/1000);last=now;paintTimer();
+  if(S.left<=0){raf=null;submit(true);return}
+  raf=requestAnimationFrame(tick);
+}
+function paintTimer(){
+  const lim=MODES[P.mode].limit,f=$("tfill");if(!f)return;
+  f.style.transform=`scaleX(${S.left/lim})`;$("tnum").textContent=fmt(S.left)+"s";
+  const low=S.left<=5&&S.phase==="play";$("timer").classList.toggle("low",low);$("mat").classList.toggle("low",low);
+}
+
+/* ---------- screens ---------- */
+function header(){
+  const tot=S.scores.reduce((a,b)=>a+b.s,0);
+  $("meta").innerHTML=S.phase==="intro"?`<span>${best?`BEST <b>${best}</b>`:"6 TESTS · 18 ROUNDS"}</span>`:
+    (S.ranked?`<span class="rk-tag">RANKED @${esc(S.ranked.handle)}</span>`:"")+`<span>ROUND <b>${String(Math.min(S.round+1,ROUNDS)).padStart(2,"0")}</b> / ${ROUNDS}</span><span>SCORE <b>${Math.round(tot)}</b></span>`;
+  $("ticks").innerHTML=Array.from({length:ROUNDS},(_,i)=>{const sc=S.scores[i];
+    const st=sc?`style="background:color-mix(in srgb,var(--magenta) ${30+sc.s*.7}%,var(--rule))"`:"";
+    return`<i class="${!sc&&i===S.round&&S.phase==="play"?"now":""}" ${st}></i>`}).join("");
+}
+function newGame(){S={phase:"play",seed:(Math.random()*1e9)|0,round:0,scores:[],user:null,col:null,left:null,sel:1,cmode:CMODE};play()}
+function newRankGame(rk){S={phase:"play",seed:rk.seed,round:0,scores:[],user:null,col:null,left:null,sel:1,cmode:CMODE,ranked:rk};play()}
+
+function intro(){
+  stopTimer();S.phase="intro";header();
+  $("main").innerHTML=`<section class="panel">
+    <h2>そのズレ、<br>見えていますか。</h2>
+    <p>中心、太さ、色、分割、角度、字間。定規なしで当てる 18 ラウンド。</p>
+    <div class="modes">
+      <div class="mode"><b>中心</b><small>図形の重心をタップ</small></div>
+      <div class="mode"><b>色合わせ</b><small>見本と同じ色をつくる</small></div>
+      <div class="mode"><b>直角</b><small>ぴったり 90° にする</small></div>
+      <div class="mode"><b>分割</b><small>2等分・3等分・黄金比</small></div>
+      <div class="mode"><b>太さ</b><small>太さの違う1本を探す</small></div>
+      <div class="mode"><b>カーニング</b><small>字間をそろえる</small></div>
+    </div>
+    <div class="cpick" role="group" aria-labelledby="cpl">
+      <span class="cpl" id="cpl">色合わせの方式</span>
+      <div class="seg">${Object.entries(CMODELS).map(([k,M])=>`<button class="segb" data-m="${k}" aria-pressed="${k===CMODE}"><b>${M.name}</b></button>`).join("")}</div>
+    </div>
+    <div class="playmodes">
+      <button class="pm" id="go"><b>通常モード</b><small>気軽に練習。記録はこの端末だけ</small></button>
+      <button class="pm ranked" id="goRank"><b>ランク戦</b><small>Xのアカウント名で総合ランキングに挑戦</small></button>
+    </div>
+    ${best?`<span class="note">自己ベスト ${best} 点</span>`:""}
+  </section>
+  <section class="panel" id="rankPanel"><div class="hhead"><div class="rank">RANKING · ランク戦</div><span class="note" id="rkTotal"></span></div><div id="rkList"><p class="hint">読み込み中…</p></div></section>
+  ${histHTML(loadHist())}`;
+  bindHist();
+  loadRanking();
+  $("go").onclick=newGame;
+  $("goRank").onclick=rankEntry;
+  document.querySelectorAll(".segb").forEach(b=>b.onclick=()=>{CMODE=b.dataset.m;try{localStorage.setItem("de-cmode",CMODE)}catch(e){}
+    document.querySelectorAll(".segb").forEach(x=>x.setAttribute("aria-pressed",String(x===b)))});
+}
+
+async function play(){
+  await fontsReady;
+  P=makePuzzle(S.round);
+  if(S.phase!=="reveal"){
+    if(S.user==null)S.user=P.mode==="angle"||P.special?P.start:P.mode==="kern"||P.mode==="divide"?[...P.start]:null;
+    if(P.mode==="divide"&&!P.special&&!(S.sel>=0&&S.sel<P.start.length))S.sel=0;
+    if(P.mode==="color"&&!S.col)S.col=CM().fromRGB(hsv2rgb(...P.start));
+    if(S.left==null)S.left=MODES[P.mode].limit;
+    if(P.mode==="kern"&&!(S.sel>0&&S.sel<P.gs.length-1))S.sel=1;
+  }
+  header();
+  const m=MODES[P.mode],hint={center:"タップした位置は何度でも置き直せます。",angle:"ドラッグで合わせ、ボタンか矢印キーで微調整（押し続けると連続で動きます）。",divide:"ドラッグで合わせ、ボタンか矢印キーで微調整。線が2本あるときは「線」ボタン（1・2 キー）で切り替えます。",weight:"3秒以内に正解で100点。それより遅いと少しずつ下がり、最低70点。外すと0点です。",
+    kern:"下線つきの文字を左右にドラッグ。ボタンでも文字を選んで動かせます。正解はデザイナーが整えた字間と、その傾向から作ったモデルの平均です。"}[P.mode];
+  $("main").innerHTML=`<div style="display:flex;flex-direction:column;gap:12px">
+    <div class="brief"><span class="tag">${m.en}${P.mode==="color"?" · "+CM().name:""}</span><span class="prompt">${P.prompt}</span></div>
+    <div class="matwrap${P.mode==="kern"?" paper":""}${P.mode==="weight"?" tap":""}" id="mat"><svg id="stage" viewBox="0 0 600 400" tabindex="0" aria-label="${P.prompt}"><g id="scene"><rect width="600" height="400" fill="${P.mode==="kern"?"var(--sheet)":"var(--mat)"}"/>${P.mode==="kern"?"":matGrid()}<g id="layer"></g></g></svg></div>
+    <div class="timer" id="timer"><div class="tbar"><i id="tfill"></i></div><span id="tnum"></span></div>
+    <div class="controls" id="ctl"></div>
+    <div class="bar"><div class="result" id="res"></div><div class="actions"><button class="ghost" id="back">最初に戻る</button><button id="act">決定</button></div></div>
+  </div>`;
+  if(P.mode==="color"){
+    const M=CM();if(!(S.csel>=0&&S.csel<M.keys.length))S.csel=0;
+    $("ctl").innerHTML=M.keys.map((k,i)=>`<label class="sl${i===S.csel?" on":""}" id="row-${k}"><span>${k}</span><input type="range" id="sl-${k}" min="0" max="${M.max[i]}" value="${S.col[i]}"><span id="v-${k}">${S.col[i]}</span></label>`).join("")
+      +`<div class="padrow touch-row${M.keys.length>3?" four":""}">${padHTML()}</div>`;
+    M.keys.forEach((k,i)=>{const el=$("sl-"+k);
+      el.addEventListener("input",e=>{if(S.phase==="reveal")return;S.col[i]=+e.target.value;$("v-"+k).textContent=S.col[i];paintTracks();drawStage(false)});
+      const pickRow=()=>{S.csel=i;M.keys.forEach((kk,j)=>$("row-"+kk).classList.toggle("on",j===i))};
+      el.addEventListener("pointerdown",pickRow);el.addEventListener("focus",pickRow);$("row-"+k).addEventListener("pointerdown",pickRow)});
+    paintTracks();bindPad();
+  }else{const pad=padHTML();$("ctl").innerHTML=pad?`<div class="padrow">${pad}</div>`:`<p class="hint">${hint}</p>`;if(pad)bindPad()}
+  let armed=null;
+  $("back").onclick=()=>{
+    if(!S.scores.length&&S.phase!=="reveal"||armed){clearTimeout(armed);intro();return}
+    $("back").textContent="もう一度押すと戻る";
+    armed=setTimeout(()=>{armed=null;const b=$("back");if(b)b.textContent="最初に戻る"},2500);
+  };
+  bindStage();
+  $("act").onclick=()=>S.phase==="reveal"?next():submit(false);
+  paintTimer();
+  if(S.phase==="reveal")showResult();
+  else{drawStage(false);$("act").disabled=S.user===null&&(P.mode==="center"||P.mode==="weight");startTimer()}
+}
+function paintTracks(){
+  const M=CM();
+  M.keys.forEach((k,i)=>{const stops=[0,1,2,3,4,5,6].map(j=>{const v=[...S.col];v[i]=M.max[i]*j/6;return css(M.toRGB(v))});
+    $("sl-"+k).style.setProperty("--track",`linear-gradient(90deg,${stops.join(",")})`)});
+}
+function bindStage(){
+  const svg=$("stage");
+  const pt=e=>{const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())};
+  let down=false,koff=0;
+  const apply=(q,start)=>{
+    if(S.phase!=="play")return;
+    if(P.mode==="center"){S.user=[clamp(q.x,0,600),clamp(q.y,0,400)];$("act").disabled=false}
+    else if(P.mode==="angle")S.user=deg(Math.atan2(q.y-P.vy,q.x-P.vx));
+    else if(P.mode==="divide"&&P.special)S.user=P.g.apply(P,q);
+    else if(P.mode==="divide"){const t=P.lin.param(P,q);
+      if(start){let bi=0,bd=9;S.user.forEach((v,i)=>{let d=Math.abs(v-t);if(P.kind==="circle")d=Math.min(d,1-d);if(d<bd){bd=d;bi=i}});S.sel=bi;const sw=document.querySelector(".pad.sw");if(sw)sw.textContent="線 "+(bi+1)}
+      S.user[S.sel]=P.kind==="circle"?t:clamp(t,.005,.995)}
+    else if(P.mode==="weight"){let bi=null,bd=40;P.lines.forEach((l,i)=>{const d=segDist(q,l);if(d<bd){bd=d;bi=i}});if(bi==null)return;S.user=bi;$("act").disabled=false}
+    else if(P.mode==="kern"){
+      const x=S.user,n=P.gs.length;
+      if(start){let bi=1,bd=1e9;for(let i=1;i<n-1;i++){const d=Math.abs(q.x-(x[i]+P.gs[i].w/2));if(d<bd){bd=d;bi=i}}S.sel=bi;koff=q.x-x[bi]}
+      x[S.sel]=kClamp(P,x,S.sel,q.x-koff);
+    }else return;
+    drawStage(false);
+  };
+  svg.addEventListener("pointerdown",e=>{down=true;try{svg.setPointerCapture(e.pointerId)}catch(_){}apply(pt(e),true)});
+  svg.addEventListener("pointermove",e=>{if(down)apply(pt(e),false)});
+  svg.addEventListener("pointerup",()=>down=false);
+  svg.addEventListener("pointercancel",()=>down=false);
+  svg.addEventListener("keydown",e=>{
+    if(S.phase!=="play")return;
+    if(e.key==="Enter"){submit(false);return}
+    const k=e.key;
+    if(P.mode==="divide"&&!P.special&&(k==="1"||k==="2")){S.sel=clamp(+k-1,0,S.user.length-1);drawStage(false);return}
+    if(!k.startsWith("Arrow"))return;e.preventDefault();nudge(k,e.shiftKey);
+  });
+}
+function nudge(k,big){
+    if(S.phase!=="play")return;
+    const h=k==="ArrowRight"?1:k==="ArrowLeft"?-1:0,v=k==="ArrowDown"?1:k==="ArrowUp"?-1:0;
+    if(P.mode==="angle")S.user+=(h||-v)*(big?5:.5);
+    else if(P.mode==="weight"){if(h||v){S.user=S.user==null?0:(S.user+(h||v)+P.lines.length)%P.lines.length;$("act").disabled=false}}
+    else if(P.mode==="divide"&&!P.special){const d=(h||v)*(big?.02:.002);S.user[S.sel]=P.kind==="circle"?(S.user[S.sel]+d+1)%1:clamp(S.user[S.sel]+d,.005,.995)}
+    else if(P.mode==="divide"){const g=P.g,d=(h||v)*g.step*(big?8:1);S.user=P.kind==="circle"?S.user+d:P.kind==="segment"?clamp(S.user+d,.01,.99):g.apply(P,{x:S.user+d,y:S.user+d})}
+    else if(P.mode==="center"){if(!S.user)S.user=[300,200];S.user=[S.user[0]+h*(big?10:1),S.user[1]+v*(big?10:1)];$("act").disabled=false}
+    else if(P.mode==="kern"){const n=P.gs.length;if(v)S.sel=clamp(S.sel+v,1,n-2);else S.user[S.sel]=kClamp(P,S.user,S.sel,S.user[S.sel]+h*(big?5:.5))}
+    drawStage(false);
+}
+/* round cross-key pad: tap an arrow = one step, hold = repeat, slide = fine trackpad move */
+function padExtras(){
+  if(P.mode==="kern")return`<button class="pad" data-k="ArrowUp" aria-label="前の文字を選ぶ">‹ 文字</button><button class="pad" data-k="ArrowDown" aria-label="次の文字を選ぶ">文字 ›</button>`;
+  if(P.mode==="divide"&&!P.special&&P.start.length>1)return`<button class="pad sw" data-k="swap" aria-label="動かす線を切り替える">線 ${S.sel+1}</button>`;
+  return"";
+}
+function padHTML(){
+  if(!["center","angle","divide","kern","color"].includes(P.mode))return"";
+  let dots="";for(let i=-3;i<=3;i++)for(let j=-3;j<=3;j++)dots+=`<circle cx="${50+i*14}" cy="${50+j*14}" r="2.2"/>`;
+  return`<div class="dpad" id="dpad" role="group" aria-label="トラックボール"><svg viewBox="0 0 100 100" aria-hidden="true">
+    <defs><radialGradient id="ballg" cx="38%" cy="32%" r="75%"><stop offset="0" class="b0"/><stop offset=".55" class="b1"/><stop offset="1" class="b2"/></radialGradient>
+    <clipPath id="ballc"><circle cx="50" cy="50" r="44"/></clipPath></defs>
+    <circle cx="50" cy="50" r="49" class="dp-ring"/>
+    <circle cx="50" cy="50" r="44" fill="url(#ballg)"/>
+    <g clip-path="url(#ballc)"><g id="balldots" class="dp-dots">${dots}</g></g>
+    <ellipse cx="38" cy="32" rx="12" ry="7" class="dp-shine"/></svg></div>
+    <div class="padside">${padExtras()}<p class="hint"><span class="touch-only">${P.mode==="color"?"選んだスライダーを、ボールを左右に転がして微調整":"転がして移動・ふちをタップで微調整"}</span><span class="pc-only">ドラッグ、または矢印キーで微調整（Shift で大きく）</span></p></div>`;
+}
+function colorSet(i,v){
+  const M=CM();S.col[i]=M.max[i]===360?Math.round(((v%360)+360)%360):Math.round(clamp(v,0,M.max[i]));
+  const k=M.keys[i];$("sl-"+k).value=S.col[i];$("v-"+k).textContent=S.col[i];paintTracks();drawStage(false);
+}
+let cAcc=0;
+function padMove(dx,dy){ // dx,dy in screen px; low gain for precision
+  if(S.phase!=="play")return;
+  if(P.mode==="color"){const i=S.csel||0;cAcc+=(Math.abs(dx)>=Math.abs(dy)?dx:-dy)*(CM().max[i]===360?.25:CM().max[i]===255?.2:.1);const n=Math.trunc(cAcc);if(n){cAcc-=n;colorSet(i,S.col[i]+n)}return}
+  if(P.mode==="center"){if(!S.user)S.user=[300,200];S.user=[clamp(S.user[0]+dx*.35,0,600),clamp(S.user[1]+dy*.35,0,400)];$("act").disabled=false}
+  else if(P.mode==="angle")S.user+=(Math.abs(dx)>=Math.abs(dy)?dx:-dy)*.12;
+  else if(P.mode==="kern")S.user[S.sel]=kClamp(P,S.user,S.sel,S.user[S.sel]+dx*.3);
+  else if(P.mode==="divide"&&P.special)S.user=P.g.apply(P,{x:S.user,y:S.user+dy*.35});
+  else if(P.mode==="divide"){const v=P.kind==="vsplit"?dy:dx,d=v*.0007;S.user[S.sel]=P.kind==="circle"?(S.user[S.sel]+d+1)%1:clamp(S.user[S.sel]+d,.005,.995)}
+  drawStage(false);
+}
+function padStep(ux,uy){ // one step toward a direction (8-way)
+  if(S.phase!=="play")return;
+  if(P.mode==="color"){const v=ux||-uy;if(v){const i=S.csel||0;colorSet(i,S.col[i]+(v>0?1:-1))}return}
+  if(P.mode==="center"){if(!S.user)S.user=[300,200];S.user=[clamp(S.user[0]+ux,0,600),clamp(S.user[1]+uy,0,400)];$("act").disabled=false;drawStage(false);return}
+  const vert=P.mode==="divide"&&(P.kind==="vsplit"||P.kind==="grect"||P.kind==="gtri");
+  const v=P.mode==="angle"?(ux||-uy):vert?(uy||ux):(ux||uy);
+  if(v)nudge(v>0?"ArrowRight":"ArrowLeft",false);
+}
+function bindPad(){
+  const pad=$("dpad");if(!pad)return;
+  let st=null,t1=null,t2=null,rx=0,ry=0;
+  const stop=()=>{clearTimeout(t1);clearInterval(t2);t1=t2=null};
+  const roll=(dx,dy)=>{const r=pad.getBoundingClientRect(),k=100/r.width;rx=((rx+dx*k)%14+14)%14;ry=((ry+dy*k)%14+14)%14;const g=$("balldots");if(g)g.setAttribute("transform",`translate(${rx-7},${ry-7})`)};
+  const dirOf=e=>{const r=pad.getBoundingClientRect(),x=e.clientX-r.left-r.width/2,y=e.clientY-r.top-r.height/2;
+    if(Math.hypot(x,y)<r.width*.22)return null;const a=Math.round(Math.atan2(y,x)/(Math.PI/4))*Math.PI/4;
+    return[Math.round(Math.cos(a)),Math.round(Math.sin(a))]};
+  pad.addEventListener("pointerdown",e=>{e.preventDefault();try{pad.setPointerCapture(e.pointerId)}catch(_){}
+    st={x:e.clientX,y:e.clientY,lx:e.clientX,ly:e.clientY,t:performance.now(),moved:false,d:dirOf(e)};pad.classList.add("on");
+    if(st.d){padStep(...st.d);t1=setTimeout(()=>{if(st&&!st.moved)t2=setInterval(()=>padStep(...st.d),45)},380)}});
+  pad.addEventListener("pointermove",e=>{if(!st)return;
+    if(!st.moved&&Math.hypot(e.clientX-st.x,e.clientY-st.y)>6){st.moved=true;stop()}
+    if(!st.moved)return;
+    const dx=e.clientX-st.lx,dy=e.clientY-st.ly,now=performance.now(),dt=Math.max(8,now-st.t),sp=Math.hypot(dx,dy)/dt;
+    const gain=.6+Math.min(1.6,sp*1.2); // slow roll = precise, fast flick = travels further
+    padMove(dx*gain,dy*gain);roll(dx,dy);st.lx=e.clientX;st.ly=e.clientY;st.t=now});
+  const up=()=>{stop();st=null;pad.classList.remove("on")};
+  ["pointerup","pointercancel"].forEach(ev=>pad.addEventListener(ev,up));
+  document.querySelectorAll(".padside .pad").forEach(btn=>{const k=btn.dataset.k;
+    btn.onclick=()=>{if(S.phase!=="play")return;
+      if(k==="swap"){S.sel=(S.sel+1)%S.user.length;btn.textContent="線 "+(S.sel+1);drawStage(false)}else nudge(k,false)}});
+}
+function submit(timeout){
+  if(S.phase!=="play")return;
+  if(!timeout&&S.user===null&&(P.mode==="center"||P.mode==="weight"))return;
+  stopTimer();
+  const r=score();
+  S.scores[S.round]={mode:P.mode,s:Math.max(0,Math.min(100,Math.round(r.s))),d:(timeout?"時間切れ · ":"")+r.d,timeout:!!timeout};
+  S.phase="reveal";showResult();
+}
+function showResult(){
+  const sc=S.scores[S.round];
+  drawStage(true);header();paintTimer();
+  $("res").innerHTML=`<span class="big">${sc.s}</span><div><div class="verdict">${sc.timeout?"時間切れ":verdict(sc.s)}</div><div class="detail">${sc.d}</div></div>`;
+  $("act").disabled=false;$("act").textContent=S.round+1>=ROUNDS?"結果を見る":"次へ";
+  $("act").focus();
+  document.querySelectorAll("#ctl input").forEach(i=>i.disabled=true);
+}
+function next(){
+  S.round++;S.user=null;S.col=null;S.left=null;S.sel=1;
+  if(S.round>=ROUNDS){end();return}
+  S.phase="play";play();
+}
+function end(){
+  stopTimer();S.phase="end";
+  const avg=Math.round(S.scores.reduce((a,b)=>a+b.s,0)/ROUNDS);
+  if(!S.recorded){S.recorded=true;S.wasBest=!best||avg>best;if(S.wasBest){best=avg;try{localStorage.setItem("de-best-v3",JSON.stringify(avg))}catch(e){}}
+    const[hj,he]=rankOf(avg),hr=ORDER.map(m=>{const xs=S.scores.filter(x=>x.mode===m);return[MODES[m].name,Math.round(xs.reduce((p,c)=>p+c.s,0)/xs.length)]});
+    const h=loadHist();h.push({t:Date.now(),avg,jp:hj,en:he,rows:hr});saveHist(h)}
+  header();
+  const[jp,en]=rankOf(avg),avgOf=m=>{const xs=S.scores.filter(s=>s.mode===m);return Math.round(xs.reduce((p,c)=>p+c.s,0)/xs.length)};
+  const rows=ORDER.map(m=>`<div class="row"><span>${MODES[m].name}</span><div class="track"><div class="fill" style="width:${avgOf(m)}%"></div></div><span>${avgOf(m)}</span></div>`).join("");
+  const weak=[...ORDER].sort((a,b)=>avgOf(a)-avgOf(b))[0],tos=S.scores.filter(s=>s.timeout).length;
+  $("main").innerHTML=`<section class="panel">
+    <div class="rank">${en}</div>
+    <h2>${jp}<br><span class="big" style="font-size:clamp(48px,12vw,84px)">${avg}</span> <span style="font-size:18px;font-family:var(--f-body)">/ 100</span></h2>
+    <div class="rows">${rows}</div>
+    <p class="hint">いちばん伸びしろがあるのは「${MODES[weak].name}」。${tos?`時間切れ ${tos} 回。`:""}${S.wasBest?"自己ベスト更新です。":`自己ベストは ${best} 点。`}</p>
+    <div class="rec"><div class="rank">「${MODES[weak].name}」を鍛える本</div><ul>${(WEAK_BOOKS[weak]||[]).map(b=>bookLi(b)).join("")}</ul></div>
+    <div class="actions"><button id="again">もう一度</button><button class="ghost" id="home">これまでの成績</button></div>
+  </section>
+  ${S.ranked?`<section class="panel" id="rkRes"><div class="rank">RANKING · @${esc(S.ranked.handle)}</div><p class="hint">ランキングに登録しています…</p></section>`:""}
+  <section class="panel share">
+    <div class="rank">SHARE</div>
+    <img id="card" alt="結果カード：${jp} ${avg}点">
+    <a class="btn xpost" id="postX" target="_blank" rel="noopener">X でポスト</a>
+    <div class="subrow"><button class="ghost" id="saveImg">画像を保存</button><button class="ghost" id="copyTxt">投稿文をコピー</button></div>
+    <p class="hint" id="shareMsg">画像はクリップボードにコピーされます。X の投稿画面で貼り付けてください。</p>
+  </section>`;
+  $("again").onclick=S.ranked?rankEntry:newGame;if(S.ranked)$("again").textContent="もう一度ランク戦";
+  $("home").onclick=()=>{intro();const h=$("hist");if(h)h.scrollIntoView({block:"start"})};
+  const rows6=ORDER.map(m=>[MODES[m].name,avgOf(m)]);
+  if(S.ranked)finishRank(avg,rows6).then(rk=>setupShare(avg,jp,en,rows6,rk));
+  else setupShare(avg,jp,en,rows6);
+}
+
+/* ---------- books for the weakest test (Amazon associate tag timing-22) ---------- */
+const bookLi=([t,a,d])=>`<li><a href="https://www.amazon.co.jp/s?k=${encodeURIComponent(t+" "+a)}&tag=timing-22" target="_blank" rel="sponsored noopener"><b>${t}</b><span>${a}</span><small>${d}</small></a></li>`;
+const WEAK_BOOKS={
+  center:[["なるほどデザイン","筒井美希","重心やバランスの見え方を図で理解する"],["ノンデザイナーズ・デザインブック","ロビン・ウィリアムズ","整列と近接で、見た目の中心を整える"]],
+  weight:[["タイポグラフィの基本ルール","大崎善治","線の太さと文字の濃さをそろえる感覚"],["なるほどデザイン","筒井美希","強弱のつけ方を目で見て覚える"]],
+  color:[["配色の設計","ジョゼフ・アルバース","色は隣の色で変わって見える。色を見る目の古典"],["配色アイデア手帖","桜井輝子","色の組み合わせを数値つきで見比べる"]],
+  divide:[["デザインのルール、レイアウトのセオリー。","佐藤好彦","比率・分割・余白でレイアウトを組む"],["なるほどデザイン","筒井美希","黄金比や3分割を実例で見る"]],
+  angle:[["ノンデザイナーズ・デザインブック","ロビン・ウィリアムズ","整列の原則で、ずれに気づく目をつくる"],["デザインのルール、レイアウトのセオリー。","佐藤好彦","グリッドと水平・垂直の扱い"]],
+  kern:[["タイポグラフィの基本ルール","大崎善治","文字組みと字間の考え方"],["欧文書体","小林章","欧文の形とスペーシングを知る"]]
+};
+
+/* ---------- share ---------- */
+const SHARE_URL="https://designers-game.vercel.app/eye/"; // public address of the game
+function shareURL(){ // own hosting -> its own address; anywhere inside Claude (or a local file) -> the public game link
+  try{const h=location.hostname;if(/^https?:$/.test(location.protocol)&&h&&!/(claude|anthropic|usercontent|localhost|127\.0\.0\.1)/i.test(h))return location.origin+location.pathname}catch(e){}
+  return SHARE_URL}
+async function drawCard(avg,jp,en,rows,t,rk){
+  try{await Promise.race([Promise.all(['400 60px "Dela Gothic One"','700 26px "Zen Kaku Gothic New"','500 22px "IBM Plex Mono"'].map(f=>document.fonts.load(f,"デザイナーの目0123456789"+jp))),new Promise(r=>setTimeout(r,2000))])}catch(e){}
+  const W=1200,H=630,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
+  const MAT="#2d5a4b",LN="#3c6c5c",MJ="#4d7f6e",CH="#f3f6f0",PK="#ff4aa0",YL="#f2c200";
+  x.fillStyle=MAT;x.fillRect(0,0,W,H);
+  for(let i=0;i<=W;i+=30){x.fillStyle=i%150?LN:MJ;x.fillRect(i,0,1,H)}
+  for(let j=0;j<=H;j+=30){x.fillStyle=j%150?LN:MJ;x.fillRect(0,j,W,1)}
+  const D='"Dela Gothic One","Hiragino Sans",sans-serif',B='"Zen Kaku Gothic New","Hiragino Sans",sans-serif',M='"IBM Plex Mono",Menlo,monospace';
+  x.strokeStyle=CH;x.lineWidth=3;x.beginPath();x.arc(92,92,16,0,7);x.moveTo(92,64);x.lineTo(92,120);x.moveTo(64,92);x.lineTo(120,92);x.stroke();
+  x.fillStyle=CH;x.font=`400 40px ${D}`;x.textBaseline="middle";x.fillText("デザイナーの目",138,94);
+  x.textBaseline="alphabetic";
+  x.fillStyle=YL;x.font=`500 22px ${M}`;x.fillText(en.split("").join(String.fromCharCode(8202)),72,206);
+  x.fillStyle=CH;x.font=`400 ${jp.length>7?50:62}px ${D}`;x.fillText(jp,70,282);
+  x.font=`400 200px ${D}`;x.fillText(String(avg),62,500);const sw=x.measureText(String(avg)).width;
+  x.font=`700 34px ${B}`;x.globalAlpha=.75;x.fillText("/ 100",80+sw,496);x.globalAlpha=1;
+  rows.forEach(([n,v],i)=>{const y=180+i*62;x.fillStyle=CH;x.font=`700 26px ${B}`;x.fillText(n,660,y+9);
+    x.globalAlpha=.18;x.fillRect(820,y-6,280,16);x.globalAlpha=1;x.fillStyle=PK;x.fillRect(820,y-6,280*v/100,16);
+    x.fillStyle=CH;x.font=`500 24px ${M}`;x.textAlign="right";x.fillText(String(v),1150,y+9);x.textAlign="left"});
+  x.fillStyle=CH;x.globalAlpha=.7;x.font=`500 20px ${M}`;
+  const d=new Date(t||Date.now());x.fillText(`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")}`,72,578);
+  x.globalAlpha=1;x.fillStyle=YL;x.font=`500 24px ${M}`;x.fillText("PLAY → "+shareURL().replace(/^https?:\/\//,""),72,545);x.fillStyle=CH;x.globalAlpha=.7;x.font=`500 20px ${M}`;
+  x.textAlign="right";x.fillText(rk?"#デザイナーの目 #ランク戦":"#デザイナーの目",1150,578);x.textAlign="left";x.globalAlpha=1;
+  if(rk){ // ランク戦の順位バッジ（右上）
+    const n=rk.isBest?rk.rank:rk.thisRank,lab=rk.isBest?"総合":"今回",line=`${lab} ${n}位 / ${rk.total}人`;
+    x.font=`400 36px ${D}`;const bw=x.measureText(line).width+44;
+    x.fillStyle=PK;x.fillRect(1150-bw,62,bw,62);
+    x.fillStyle="#fff";x.textAlign="right";x.textBaseline="middle";x.fillText(line,1150-22,95);
+    x.fillStyle=CH;x.font=`500 22px ${M}`;x.globalAlpha=.85;x.fillText("RANKED @"+rk.handle,1150,146);
+    x.globalAlpha=1;x.textAlign="left";x.textBaseline="alphabetic";
+  }
+  return await new Promise(r=>c.toBlob(r,"image/png"));
+}
+async function setupShare(avg,jp,en,rows,rk){
+  const msg=t=>{const m=$("shareMsg");if(m)m.textContent=t};
+  const top=[...rows].sort((a,b)=>b[1]-a[1])[0];
+  const rkLine=rk?(rk.isBest?`ランク戦で総合${rk.rank}位 / ${rk.total}人！`:`ランク戦で今回は${rk.thisRank}位相当（自己ベスト${rk.best}点で総合${rk.rank}位）`):"";
+  const tags=rk?"#デザイナーの目 #ランク戦":"#デザイナーの目";
+  const text=`デザイナーの目、${avg}点で「${jp}」でした。${rkLine||`いちばん得意なのは${top[0]}（${top[1]}点）。`}\n${rows.map(([n,v])=>`${n}${v}`).join(" / ")}\n${tags}`;
+  const url=shareURL();
+  const xLen=t=>[...t.replace(/https?:\/\/\S+/g,"x".repeat(23))].reduce((n,c)=>n+(/[\u1100-\uffef]/.test(c)?2:1),0);
+  let main=text;
+  if(xLen(main+"\n"+url)>270)main=`デザイナーの目、${avg}点で「${jp}」でした。${rkLine}\n${tags}`;
+  if(xLen(main+"\n"+url)>270)main=`デザイナーの目、${avg}点で「${jp}」でした。\n${tags}`;
+  const body=main+(url?"\n"+url:""); // link goes in the body itself so every share route keeps it
+  $("postX").href="https://x.com/intent/post?text="+encodeURIComponent(body); // prefilled where X allows it
+  $("copyTxt").onclick=()=>{const t=body;const ok=()=>{msg("投稿文をコピーしました。X の投稿画面で貼り付けてください。");$("copyTxt").textContent="コピーしました"};
+    try{navigator.clipboard.writeText(t).then(ok,()=>msg(t))}catch(e){msg(t)}};
+  const blob=await drawCard(avg,jp,en,rows,undefined,rk);if(!$("card"))return;
+  const objURL=URL.createObjectURL(blob);$("card").src=objURL;
+  const fname=`designers-eye-${avg}.png`;
+  $("saveImg").onclick=()=>saveBlob(blob,fname,msg);
+  let file=null;try{file=new File([blob],fname,{type:"image/png"})}catch(e){}
+  const canShareFile=!!(file&&!window.claude&&navigator.canShare&&navigator.canShare({files:[file]}));
+  $("postX").onclick=e=>{
+    if(canShareFile){ // hosted page on a phone: share sheet -> X gets image + text
+      e.preventDefault();navigator.share({files:[file],text:body}).catch(()=>{});
+      // some apps keep only the image from a share sheet, so keep the text (with link) ready to paste
+      try{navigator.clipboard.writeText(body).then(()=>msg("投稿文（リンク入り）もコピーしました。本文が入っていなければ貼り付けてください。"),()=>{})}catch(_){}
+      return;
+    }
+    // otherwise the link opens X with the text; put the image on the clipboard so it can be pasted (desktop)
+    try{navigator.clipboard.write([new ClipboardItem({"image/png":blob})])
+      .then(()=>msg("画像をクリップボードにコピーしました。X の投稿画面で貼り付けてください。ログイン後に本文が消えていたら「投稿文をコピー」で入れ直せます。"),()=>{})}catch(_){}
+  };
+
+}
+
+const COARSE=()=>{try{return matchMedia("(pointer:coarse)").matches}catch(e){return false}};
+let dlCap;async function getDl(){if(dlCap!==undefined)return dlCap;dlCap=null;try{if(window.claude?.use)dlCap=await claude.use("downloads")}catch(e){}return dlCap}
+async function saveBlob(blob,fname,msg){
+  const dl=await getDl();
+  if(dl){try{await dl.save({filename:fname,data:blob});msg("画像を保存しました。")}catch(e){msg(e&&e.code==="declined"?"保存をキャンセルしました。":"ここでは保存できませんでした。画像を長押し（右クリック）して保存してください。")}return}
+  try{const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=fname;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);msg("画像を保存しました。")}
+  catch(e){msg("画像を長押し（右クリック）して保存してください。")}
+}
+
+/* ---------- history: every finished game, kept in this browser; cards are redrawn from the numbers ---------- */
+const HKEY="de-history-v1";
+function loadHist(){try{const h=JSON.parse(localStorage.getItem(HKEY)||"[]");return Array.isArray(h)?h.filter(e=>e&&typeof e.t==="number").sort((a,b)=>a.t-b.t):[]}catch(e){return[]}}
+function saveHist(h){try{localStorage.setItem(HKEY,JSON.stringify(h.slice(-80)))}catch(e){}}
+const fmtDate=t=>{const d=new Date(t);return`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`};
+function histHTML(h){
+  if(!h.length)return`<section class="panel" id="hist"><div class="hhead"><div class="rank">HISTORY</div><span class="note">0 回</span></div>
+    <p class="hint">まだ記録がありません。18 ラウンドを最後まで遊ぶと、ここに結果カードが残ります。記録はこの端末のブラウザに保存されます。</p></section>`;
+  const last=h.slice(-20),W=320,H=90,px=i=>last.length<2?W/2:12+i*(W-24)/(last.length-1),py=v=>H-10-v/100*(H-20);
+  const line=last.map((e,i)=>`${i?"L":"M"}${px(i).toFixed(1)},${py(e.avg).toFixed(1)}`).join("");
+  const bestE=Math.max(...h.map(e=>e.avg));
+  return`<section class="panel" id="hist">
+    <div class="hhead"><div class="rank">HISTORY</div><span class="note">${h.length} 回 · 最高 ${bestE} 点</span></div>
+    <svg class="spark" viewBox="0 0 ${W} ${H}" role="img" aria-label="直近${last.length}回のスコア推移">
+      ${[25,50,75].map(v=>`<line x1="0" x2="${W}" y1="${py(v)}" y2="${py(v)}" class="sp-grid"/>`).join("")}
+      <path d="${line}" class="sp-line"/>${last.map((e,i)=>`<circle cx="${px(i)}" cy="${py(e.avg)}" r="${i===last.length-1?4:2.5}" class="${i===last.length-1?"sp-last":"sp-dot"}"/>`).join("")}
+    </svg>
+    <div class="thumbs">${h.slice().reverse().map((e,i)=>`<button class="thumb" data-i="${h.length-1-i}" aria-label="${fmtDate(e.t)} ${e.avg}点 ${e.jp}"><img alt="" data-i="${h.length-1-i}"><span><b>${e.avg}</b> ${e.jp}<br><small>${fmtDate(e.t)}</small></span></button>`).join("")}</div>
+    <div class="actions"><button class="ghost" id="clearHist">記録を消す</button></div>
+  </section>
+  <div class="viewer" id="viewer" hidden><div class="vbox"><img id="vimg" alt="過去の結果カード"><div class="actions"><button id="vsave">画像を保存</button><button class="ghost" id="vclose">閉じる</button></div><p class="hint" id="vmsg"></p></div></div>`;
+}
+async function bindHist(){
+  const h=loadHist();if(!h.length)return;
+  const cache={};
+  const card=async i=>{if(!cache[i]){const e=h[i];cache[i]=await drawCard(e.avg,e.jp,e.en,e.rows,e.t,e.rk)}return cache[i]};
+  document.querySelectorAll(".thumb").forEach(b=>b.onclick=async()=>{const i=+b.dataset.i,bl=await card(i);
+    $("vimg").src=URL.createObjectURL(bl);$("vmsg").textContent="";$("viewer").hidden=false;
+    $("vsave").onclick=()=>saveBlob(bl,`designers-eye-${h[i].avg}-${new Date(h[i].t).toISOString().slice(0,10)}.png`,t=>$("vmsg").textContent=t)});
+  $("vclose").onclick=()=>$("viewer").hidden=true;
+  $("viewer").onclick=e=>{if(e.target.id==="viewer")$("viewer").hidden=true};
+  let armed=null;$("clearHist").onclick=()=>{const b=$("clearHist");
+    if(armed){clearTimeout(armed);saveHist([]);try{localStorage.removeItem(HKEY)}catch(e){}$("hist").remove();return}
+    b.textContent="もう一度押すと消えます";armed=setTimeout(()=>{armed=null;b.textContent="記録を消す"},2500)};
+  // thumbnails, newest first, drawn one by one
+  for(const img of document.querySelectorAll(".thumb img")){if(!document.body.contains(img))return;img.src=URL.createObjectURL(await card(+img.dataset.i))}
+}
+
+/* ---------- ranked mode: X handle, opt-in, all-time best ---------- */
+const API="/api/eye",RK_H="de-rank-handle",RK_T="de-rank-tokens";
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const lsGet=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const tokenFor=h=>(lsGet(RK_T,{})||{})[h.toLowerCase()]||null;
+async function api(body){
+  const r=await fetch(API,body?{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}:{});
+  let j={};try{j=await r.json()}catch(e){}
+  if(!r.ok)throw new Error(j.error||"通信できませんでした。電波のよい所でもう一度どうぞ。");
+  return j;
+}
+async function loadRanking(){
+  const box=$("rkList");if(!box)return;
+  let d;try{d=await api()}catch(e){box.innerHTML=`<p class="hint">${esc(e.message)}</p>`;return}
+  if(!$("rkList"))return;
+  const mine=(lsGet(RK_H,"")||"").toLowerCase();
+  $("rkTotal").textContent=d.total?`${d.total} 人参加`:"";
+  if(!d.list.length){box.innerHTML=`<p class="hint">まだ誰もいません。ランク戦で最初の1人になろう。</p>`;return}
+  const row=e=>`<li class="${e.handle.toLowerCase()===mine?"me":""}"><span class="rk-n">${e.rank}</span><a href="https://x.com/${encodeURIComponent(e.handle)}" target="_blank" rel="noopener">@${esc(e.handle)}</a><span class="rk-s">${e.avg}</span></li>`;
+  const draw=all=>{box.innerHTML=`<ol class="rklist">${d.list.slice(0,all?100:10).map(row).join("")}</ol>`+
+    (!all&&d.list.length>10?`<button class="ghost" id="rkMore">100位まで見る</button>`:"")+
+    (mine&&tokenFor(mine)?`<p class="hint">あなたは @${esc(lsGet(RK_H,""))} で参加中。<button class="linkbtn" id="rkLeave">ランキングから外す</button></p>`:"");
+    const m=$("rkMore");if(m)m.onclick=()=>draw(true);
+    const l=$("rkLeave");if(l)l.onclick=leaveRank};
+  draw(false);
+}
+let leaveArmed=null;
+async function leaveRank(){
+  const b=$("rkLeave"),h=lsGet(RK_H,"");
+  if(!leaveArmed){b.textContent="もう一度押すと外れます";leaveArmed=setTimeout(()=>{leaveArmed=null;const x=$("rkLeave");if(x)x.textContent="ランキングから外す"},2500);return}
+  clearTimeout(leaveArmed);leaveArmed=null;
+  try{await api({action:"delete",handle:h,token:tokenFor(h)});const t=lsGet(RK_T,{});delete t[h.toLowerCase()];lsSet(RK_T,t);loadRanking()}
+  catch(e){b.textContent=e.message}
+}
+function rankEntry(){
+  stopTimer();S.phase="intro";header();
+  const h=lsGet(RK_H,"");
+  $("main").innerHTML=`<section class="panel">
+    <div class="rank">RANKED · ランク戦</div>
+    <h2>総合ランキングに<br>挑戦する</h2>
+    <p>18ラウンドの平均点で順位が決まります。何度でも挑戦でき、いちばん高い点数が残ります。</p>
+    <form id="rkForm" class="rkform" novalidate>
+      <label for="rkHandle" class="cpl">Xのアカウント名</label>
+      <div class="handle"><span>@</span><input id="rkHandle" name="handle" autocomplete="username" autocapitalize="off" spellcheck="false" inputmode="email" maxlength="16" placeholder="your_name" value="${esc(h)}"></div>
+      <label class="agree"><input type="checkbox" id="rkAgree"${h?" checked":""}> アカウント名と点数をランキングで公開することに同意します</label>
+      <p class="hint">登録した端末でだけ、同じアカウント名で記録を更新できます。ランキングからはいつでも外せます。</p>
+      <p class="rk-err" id="rkErr" role="alert"></p>
+      <div class="actions"><button id="rkGo" type="submit">ランク戦をはじめる</button><button class="ghost" type="button" id="rkBack">戻る</button></div>
+    </form>
+  </section>`;
+  $("rkBack").onclick=intro;
+  $("rkForm").onsubmit=async e=>{
+    e.preventDefault();
+    const err=t=>$("rkErr").textContent=t,handle=$("rkHandle").value.trim().replace(/^@/,"");
+    if(!/^[A-Za-z0-9_]{1,15}$/.test(handle))return err("Xのアカウント名を、英数字と _ の15文字以内で入れてください。");
+    if(!$("rkAgree").checked)return err("ランキングに載せるには、公開への同意が必要です。");
+    $("rkGo").disabled=true;err("");
+    try{
+      const g=await api({action:"start",handle,token:tokenFor(handle)});
+      lsSet(RK_H,handle);
+      newRankGame({...g,handle});
+    }catch(x){err(x.message);$("rkGo").disabled=false}
+  };
+}
+async function finishRank(avg,rows6){
+  const box=()=>$("rkRes"),rk=S.ranked;
+  if(rk.result)return showRank(rk.result);
+  try{
+    const r=await api({action:"submit",gid:rk.gid,seed:rk.seed,t0:rk.t0,sig:rk.sig,handle:rk.handle,token:tokenFor(rk.handle),avg,rows:rows6.map(x=>x[1])});
+    if(r.token){const t=lsGet(RK_T,{});t[rk.handle.toLowerCase()]=r.token;lsSet(RK_T,t)}
+    rk.result={handle:r.handle,rank:r.rank,thisRank:r.thisRank,total:r.total,best:r.best,isBest:r.isBest};
+    const hs=loadHist();if(hs.length){hs[hs.length-1].rk=rk.result;saveHist(hs)}
+    return showRank(rk.result);
+  }catch(e){
+    if(box())box().innerHTML=`<div class="rank">RANKING</div><p class="rk-err">${esc(e.message)}</p>`;
+    return undefined;
+  }
+}
+function showRank(r){
+  const b=$("rkRes");
+  if(b)b.innerHTML=`<div class="rank">RANKING · @${esc(r.handle)}</div>
+    <div class="rk-big"><span class="big">${r.isBest?r.rank:r.thisRank}</span><span>位 / ${r.total}人${r.isBest?"":"相当"}</span></div>
+    <p class="hint">${r.isBest?`自己ベスト更新。総合ランキングは ${r.rank} 位です。`:`今回の点数なら ${r.thisRank} 位相当。自己ベスト ${r.best} 点で、総合 ${r.rank} 位にいます。`}</p>
+    <div class="actions"><button class="ghost" id="rkSee">ランキングを見る</button></div>`;
+  const s=$("rkSee");if(s)s.onclick=()=>{intro();const p=$("rankPanel");if(p)p.scrollIntoView({block:"start"})};
+  return r;
+}
+
+/* ---------- boot ---------- */
+function start(data){
+  if(data&&data.S&&data.S.phase&&data.S.phase!=="intro"){S=data.S;if(S.phase==="end"){end();return}play();return}
+  intro();
+}
+window.claude?.hot?.snapshot?.(()=>({S}));
+window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
+</script>
+
+</body>
+</html>
