@@ -252,8 +252,9 @@ button:focus-visible{outline:3px solid var(--magenta);outline-offset:2px}
 .rk-name{font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kind{max-width:none}
 .handle span[hidden]+input{padding-left:14px}
-.rk-who{display:flex;flex-direction:column;min-width:0;line-height:1.3}
-.rk-title{font:400 18px var(--f-display);letter-spacing:.06em;color:var(--muted);line-height:1.2;margin-top:2px}
+.rk-who{display:flex;align-items:baseline;gap:10px;min-width:0;line-height:1.3}
+.rk-who > a,.rk-who > .rk-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rk-title{flex:none;font:400 20px var(--f-display);letter-spacing:.04em;color:var(--muted);line-height:1.2}
 .rklist li.top .rk-n{width:2.1em;height:2.1em;display:grid;place-items:center;border-radius:50%;font-size:15px;margin-left:auto;color:#2a2008!important;box-shadow:inset 0 0 0 2px rgba(0,0,0,.15)}
 .rklist li.top1 .rk-n{background:linear-gradient(135deg,#fff3b0,#e2b53a 50%,#9a6f12)}
 .rklist li.top2 .rk-n{background:linear-gradient(135deg,#ffffff,#c3cad2 50%,#6f7a86)}
@@ -1190,7 +1191,7 @@ async function loadRanking(scope){
   if(!d.list.length){box.innerHTML=`<p class="hint">${want==="today"?"今日はまだ誰もいません。今日の1位を取りにいこう。":"まだ誰もいません。ランク戦で最初の1人になろう。"}</p>`;return}
   const who=e=>e.kind==="x"?`<a href="https://x.com/${encodeURIComponent(e.name)}" target="_blank" rel="noopener">@${esc(e.name)}</a>`:`<span class="rk-name">${esc(e.name)}</span>`;
   const row=e=>{const T=TITLES[e.rank];
-    return`<li class="${e.id===myId?"me":""}${T?` top top${e.rank}`:""}"><span class="rk-n">${e.rank}</span><span class="rk-who">${who(e)}${T?`<small class="rk-title">${T.jp}</small>`:""}</span><span class="rk-s">${e.avg}</span></li>`};
+    return`<li class="${e.id===myId?"me":""}${T?` top top${e.rank}`:""}"><span class="rk-n">${e.rank}</span><span class="rk-who">${T?`<b class="rk-title">${T.jp}</b>`:""}${who(e)}</span><span class="rk-s">${e.avg}</span></li>`};
   const draw=all=>{box.innerHTML=`<ol class="rklist">${d.list.slice(0,all?100:10).map(row).join("")}</ol>`+
     (!all&&d.list.length>10?`<button class="ghost" id="rkMore">100位まで見る</button>`:"")+
     (myId?`<p class="hint">あなたは「${esc(shown(me))}」で参加中。<button class="linkbtn" id="rkLeave">ランキングから外す</button></p>`:"");
