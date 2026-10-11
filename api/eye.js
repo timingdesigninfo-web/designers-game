@@ -20,6 +20,9 @@ const DB_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST
 const SECRET = process.env.RANK_SECRET || crypto.createHash('sha256').update('eye-rank:' + (DB_TOKEN || '')).digest('hex');
 
 const RANK = 'eye:rank';
+// 今日のランキング（日本時間の0時で切り替え）。8日たったら自動で消える
+const jstDay = (t = Date.now()) => new Date(t + 9 * 3600e3).toISOString().slice(0, 10);
+const dayKey = d => 'eye:day:' + d;
 const userKey = h => 'eye:user:' + h;
 const HANDLE_RE = /^[A-Za-z0-9_]{1,15}$/;
 const MIN_PLAY_MS = Number(process.env.EYE_MIN_PLAY_MS || 45 * 1000); // 18ラウンドをこれより速く終えるのは不可能
@@ -82,15 +85,22 @@ async function owner(id) {
   return o;
 }
 
-async function top() {
-  const [list, total] = await db([['ZREVRANGE', RANK, 0, 99], ['ZCARD', RANK]]);
-  if (!list.length) return { total: 0, list: [] };
-  const metas = await db(list.map(id => ['HMGET', userKey(id), 'name', 'kind', 'best', 'rows', 'bt']));
+async function top(scope) {
+  const today = scope === 'today';
+  const day = jstDay();
+  const key = today ? dayKey(day) : RANK;
+  const [list, total] = await db([['ZREVRANGE', key, 0, 99, 'WITHSCORES'], ['ZCARD', key]]);
+  const ids = [], scores = [];
+  for (let i = 0; i < list.length; i += 2) { ids.push(list[i]); scores.push(Math.floor(Number(list[i + 1]))); }
+  if (!ids.length) return { scope: today ? 'today' : 'all', day, total: 0, list: [] };
+  const metas = await db(ids.map(id => ['HMGET', userKey(id), 'name', 'kind']));
   return {
+    scope: today ? 'today' : 'all',
+    day,
     total,
-    list: list.map((id, i) => {
-      const [name, kind, best, rows, bt] = metas[i];
-      return { rank: i + 1, id, name: name || id.slice(2), kind: kind || (id.startsWith('x:') ? 'x' : 'name'), avg: Number(best), rows: rows ? JSON.parse(rows) : null, t: Number(bt) };
+    list: ids.map((id, i) => {
+      const [name, kind] = metas[i];
+      return { rank: i + 1, id, name: name || id.slice(2), kind: kind || (id.startsWith('x:') ? 'x' : 'name'), avg: scores[i] };
     }),
   };
 }
@@ -127,6 +137,11 @@ async function submit(body) {
   const [fresh] = await db([['SET', 'eye:gid:' + gid, '1', 'NX', 'EX', 4 * 3600]]);
   if (fresh !== 'OK') return [409, { error: 'このランク戦はもう登録済みです。' }];
 
+  const day = jstDay();
+  const dk = dayKey(day);
+  const [dayPrev] = await db([['ZSCORE', dk, lower]]);
+  const dayBestBefore = dayPrev == null ? -1 : Math.floor(Number(dayPrev));
+
   let u = await owner(lower);
   let newToken = null;
   if (u) {
@@ -143,9 +158,12 @@ async function submit(body) {
     cmds.push(['HSET', userKey(lower), 'best', String(avg), 'rows', JSON.stringify(rows), 'bt', String(now)]);
     cmds.push(['ZADD', RANK, rankScore(avg, now), lower]);
   }
+  const isDayBest = avg > dayBestBefore;
+  if (isDayBest) cmds.push(['ZADD', dk, rankScore(avg, now), lower], ['EXPIRE', dk, 8 * 86400]);
   cmds.push(['ZREVRANK', RANK, lower], ['ZCARD', RANK], ['ZCOUNT', RANK, String(avg + 1), '+inf']);
+  cmds.push(['ZREVRANK', dk, lower], ['ZCARD', dk], ['ZCOUNT', dk, String(avg + 1), '+inf']);
   const r = await db(cmds);
-  const [rank, total, above] = r.slice(-3);
+  const [rank, total, above, dRank, dTotal, dAbove] = r.slice(-6);
   return [200, {
     name: me.name,
     kind: me.kind,
@@ -155,6 +173,12 @@ async function submit(body) {
     rank: rank + 1,              // 自己ベストでの総合順位
     thisRank: above + 1,         // 今回の点数なら何位相当か
     total,
+    day,
+    dayBest: isDayBest ? avg : dayBestBefore,
+    isDayBest,
+    dayRank: dRank + 1,          // 今日の自己ベストでの順位
+    dayThisRank: dAbove + 1,     // 今回の点数なら今日何位相当か
+    dayTotal: dTotal,
     token: newToken,
   }];
 }
@@ -166,14 +190,14 @@ async function remove(body) {
   const u = await owner(lower);
   if (!u) return [200, { removed: false }];
   if (!safeEq(sha(String(body.token || '')), u.tok)) return [403, { error: '登録した端末からだけ外せます。' }];
-  await db([['ZREM', RANK, lower], ['DEL', userKey(lower)]]);
+  await db([['ZREM', RANK, lower], ['ZREM', dayKey(jstDay()), lower], ['ZREM', dayKey(jstDay(Date.now() - 86400e3)), lower], ['DEL', userKey(lower)]]);
   return [200, { removed: true }];
 }
 
 module.exports = async (req, res) => {
   if (!DB_URL || !DB_TOKEN) return send(res, 503, { error: 'ランキングの準備中です（データベース未接続）。' });
   try {
-    if (req.method === 'GET') return send(res, 200, await top());
+    if (req.method === 'GET') return send(res, 200, await top((req.query && req.query.scope) || new URL(req.url, 'http://x').searchParams.get('scope')));
     if (req.method !== 'POST') return send(res, 405, { error: 'method' });
     if (await rateLimited(req)) return send(res, 429, { error: '少し時間をおいてからもう一度どうぞ。' });
     let body = req.body;

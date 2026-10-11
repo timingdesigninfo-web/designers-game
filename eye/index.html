@@ -266,6 +266,9 @@ button:focus-visible{outline:3px solid var(--magenta);outline-offset:2px}
 .rk-err{color:var(--magenta);font-weight:700;margin:0;min-height:1em}
 .rk-big{display:flex;align-items:baseline;gap:8px}
 .rk-big span:last-child{font-weight:700}
+.rk-two{display:flex;gap:28px;flex-wrap:wrap}
+.rk-two small{font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.1em}
+.rktabs{max-width:none}
 .sister{margin-top:6px;font-size:12px;color:var(--muted)}
 .sister a{color:var(--ink)}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
@@ -758,7 +761,7 @@ function intro(){
     </div>
     ${best?`<span class="note">自己ベスト ${best} 点</span>`:""}
   </section>
-  <section class="panel" id="rankPanel"><div class="hhead"><div class="rank">RANKING · ランク戦</div><span class="note" id="rkTotal"></span></div><div id="rkList"><p class="hint">読み込み中…</p></div></section>
+  <section class="panel" id="rankPanel"><div class="hhead"><div class="rank">RANKING · ランク戦</div><span class="note" id="rkTotal"></span></div><div class="seg rktabs" role="tablist"><button class="segb" data-s="today" role="tab" aria-pressed="true"><b>今日</b><small>0時にリセット</small></button><button class="segb" data-s="all" role="tab" aria-pressed="false"><b>総合</b><small>これまでの自己ベスト</small></button></div><div id="rkList"><p class="hint">読み込み中…</p></div></section>
   ${histHTML(loadHist())}`;
   bindHist();
   loadRanking();
@@ -1014,12 +1017,12 @@ async function drawCard(avg,jp,en,rows,t,rk){
   const d=new Date(t||Date.now());x.fillText(`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")}`,72,578);
   x.globalAlpha=1;x.fillStyle=YL;x.font=`500 24px ${M}`;x.fillText("PLAY → "+shareURL().replace(/^https?:\/\//,""),72,545);x.fillStyle=CH;x.globalAlpha=.7;x.font=`500 20px ${M}`;
   x.textAlign="right";x.fillText("#デザイナーの目",1150,578);x.textAlign="left";x.globalAlpha=1;
-  if(rk){ // ランク戦の順位バッジ（右上）
-    const n=rk.isBest?rk.rank:rk.thisRank,lab=rk.isBest?"総合":"今回",line=`${lab} ${n}位 / ${rk.total}人`;
-    x.font=`400 36px ${D}`;const bw=x.measureText(line).width+44;
-    x.fillStyle=PK;x.fillRect(1150-bw,62,bw,62);
-    x.fillStyle="#fff";x.textAlign="right";x.textBaseline="middle";x.fillText(line,1150-22,95);
-    x.fillStyle=CH;x.font=`500 22px ${M}`;x.globalAlpha=.85;x.fillText("RANKED "+(rk.who||""),1150,146);
+  if(rk){ // ランク戦の順位バッジ（右上）：今日を大きく、総合を小さく
+    const p=rkParts(rk),line=p.day||p.all,sub=p.day?p.all:"";
+    x.font=`400 34px ${D}`;const bw=x.measureText(line).width+44;
+    x.fillStyle=PK;x.fillRect(1150-bw,58,bw,60);
+    x.fillStyle="#fff";x.textAlign="right";x.textBaseline="middle";x.fillText(line,1150-22,89);
+    x.fillStyle=CH;x.font=`700 22px ${B}`;x.globalAlpha=.9;x.fillText((sub?sub+"　":"")+(rk.who||""),1150,142);
     x.globalAlpha=1;x.textAlign="left";x.textBaseline="alphabetic";
   }
   return await new Promise(r=>c.toBlob(r,"image/png"));
@@ -1027,7 +1030,7 @@ async function drawCard(avg,jp,en,rows,t,rk){
 async function setupShare(avg,jp,en,rows,rk){
   const msg=t=>{const m=$("shareMsg");if(m)m.textContent=t};
   const top=[...rows].sort((a,b)=>b[1]-a[1])[0];
-  const rkLine=rk?(rk.isBest?`ランク戦総合${rk.rank}位 / ${rk.total}人`:`ランク戦${rk.thisRank}位相当 / ${rk.total}人`):"";
+  const rkLine=rk?(p=>p.day?`${p.day}・${p.all}`:p.all)(rkParts(rk)):"";
   const tags="#デザイナーの目";
   const text=`${avg}点で「${jp}」でした。${rkLine}\n${rows.map(([n,v])=>`${n}${v}`).join(" / ")}\n${tags}`;
   const url=shareURL();
@@ -1119,13 +1122,17 @@ async function api(body){
   if(!r.ok)throw new Error(j.error||"通信できませんでした。電波のよい所でもう一度どうぞ。");
   return j;
 }
-async function loadRanking(){
+let rkScope="today";
+async function loadRanking(scope){
+  if(scope)rkScope=scope;
+  document.querySelectorAll(".rktabs .segb").forEach(b=>{b.setAttribute("aria-pressed",String(b.dataset.s===rkScope));b.onclick=()=>loadRanking(b.dataset.s)});
   const box=$("rkList");if(!box)return;
-  let d;try{d=await api()}catch(e){box.innerHTML=`<p class="hint">${esc(e.message)}</p>`;return}
-  if(!$("rkList"))return;
+  const want=rkScope;
+  let d;try{const r=await fetch(API+"?scope="+want);d=await r.json();if(!r.ok)throw new Error(d.error||"通信できませんでした。")}catch(e){box.innerHTML=`<p class="hint">${esc(e.message)}</p>`;return}
+  if(!$("rkList")||want!==rkScope)return;
   const me=lsGet(RK_ME,null),myId=me&&tokenFor(me)?idOf(me):"";
-  $("rkTotal").textContent=d.total?`${d.total} 人参加`:"";
-  if(!d.list.length){box.innerHTML=`<p class="hint">まだ誰もいません。ランク戦で最初の1人になろう。</p>`;return}
+  $("rkTotal").textContent=d.total?`${want==="today"?"今日 ":""}${d.total} 人参加`:"";
+  if(!d.list.length){box.innerHTML=`<p class="hint">${want==="today"?"今日はまだ誰もいません。今日の1位を取りにいこう。":"まだ誰もいません。ランク戦で最初の1人になろう。"}</p>`;return}
   const who=e=>e.kind==="x"?`<a href="https://x.com/${encodeURIComponent(e.name)}" target="_blank" rel="noopener">@${esc(e.name)}</a>`:`<span class="rk-name">${esc(e.name)}</span>`;
   const row=e=>`<li class="${e.id===myId?"me":""}"><span class="rk-n">${e.rank}</span>${who(e)}<span class="rk-s">${e.avg}</span></li>`;
   const draw=all=>{box.innerHTML=`<ol class="rklist">${d.list.slice(0,all?100:10).map(row).join("")}</ol>`+
@@ -1201,7 +1208,7 @@ async function finishRank(avg,rows6){
     const who={kind:rk.kind,name:rk.name};
     const r=await api({action:"submit",gid:rk.gid,seed:rk.seed,t0:rk.t0,sig:rk.sig,kind:rk.kind,name:rk.name,token:tokenFor(who),avg,rows:rows6.map(x=>x[1])});
     if(r.token){const t=lsGet(RK_T,{});t[idOf(who)]=r.token;lsSet(RK_T,t)}
-    rk.result={who:shown(who),rank:r.rank,thisRank:r.thisRank,total:r.total,best:r.best,isBest:r.isBest};
+    rk.result={who:shown(who),rank:r.rank,thisRank:r.thisRank,total:r.total,best:r.best,isBest:r.isBest,dayRank:r.dayRank,dayThisRank:r.dayThisRank,dayTotal:r.dayTotal,isDayBest:r.isDayBest,dayBest:r.dayBest};
     const hs=loadHist();if(hs.length){hs[hs.length-1].rk=rk.result;saveHist(hs)}
     return showRank(rk.result);
   }catch(e){
@@ -1209,11 +1216,20 @@ async function finishRank(avg,rows6){
     return undefined;
   }
 }
+function rkParts(r){ // 今日と総合の表示用テキスト
+  const day=r.dayTotal?(r.isDayBest?`今日${r.dayRank}位 / ${r.dayTotal}人`:`今日${r.dayThisRank}位相当 / ${r.dayTotal}人`):"";
+  const all=r.isBest?`総合${r.rank}位 / ${r.total}人`:`総合${r.thisRank}位相当 / ${r.total}人`;
+  return{day,all};
+}
 function showRank(r){
   const b=$("rkRes");
+  const dN=r.isDayBest?r.dayRank:r.dayThisRank,aN=r.isBest?r.rank:r.thisRank;
   if(b)b.innerHTML=`<div class="rank">RANKING · ${esc(r.who)}</div>
-    <div class="rk-big"><span class="big">${r.isBest?r.rank:r.thisRank}</span><span>位 / ${r.total}人${r.isBest?"":"相当"}</span></div>
-    <p class="hint">${r.isBest?`自己ベスト更新。総合ランキングは ${r.rank} 位です。`:`今回の点数なら ${r.thisRank} 位相当。自己ベスト ${r.best} 点で、総合 ${r.rank} 位にいます。`}</p>
+    <div class="rk-two">
+      ${r.dayTotal?`<div><small>今日</small><div class="rk-big"><span class="big">${dN}</span><span>位 / ${r.dayTotal}人${r.isDayBest?"":"相当"}</span></div></div>`:""}
+      <div><small>総合</small><div class="rk-big"><span class="big">${aN}</span><span>位 / ${r.total}人${r.isBest?"":"相当"}</span></div></div>
+    </div>
+    <p class="hint">${r.isBest?"自己ベスト更新。":`自己ベストは ${r.best} 点（総合 ${r.rank} 位）。`}${r.dayTotal&&!r.isDayBest?`今日のベストは ${r.dayBest} 点（今日 ${r.dayRank} 位）。`:""}</p>
     <div class="actions"><button class="ghost" id="rkSee">ランキングを見る</button></div>`;
   const s=$("rkSee");if(s)s.onclick=()=>{intro();const p=$("rankPanel");if(p)p.scrollIntoView({block:"start"})};
   return r;
