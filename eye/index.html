@@ -360,7 +360,7 @@ const CMODELS={
   cmyk:{name:"CMYK",sub:"印刷のインク",keys:["C","M","Y","K"],max:[100,100,100,100],toRGB:cmyk2rgb,fromRGB:rgb2cmyk}
 };
 let CMODE="hsb";try{const m=localStorage.getItem("de-cmode");if(CMODELS[m])CMODE=m}catch(e){}
-const CM=()=>CMODELS[S.cmode]||CMODELS[CMODE];
+const CM=()=>CMODELS[S.cmode]||CMODELS[CMODE]||CMODELS.hsb;
 const fmtCol=(M,v)=>M.keys.map((k,i)=>k+v[i]).join(" ");
 
 /* ---------- center: shapes (local box about -50..50) ---------- */
@@ -780,8 +780,8 @@ function intro(){
   loadRanking();
   $("go").onclick=newGame;
   $("goRank").onclick=goRanked;const ch=$("rkChange");if(ch)ch.onclick=()=>rankEntry();
-  document.querySelectorAll(".segb").forEach(b=>b.onclick=()=>{CMODE=b.dataset.m;try{localStorage.setItem("de-cmode",CMODE)}catch(e){}
-    document.querySelectorAll(".segb").forEach(x=>x.setAttribute("aria-pressed",String(x===b)))});
+  document.querySelectorAll(".cpick .segb").forEach(b=>b.onclick=()=>{CMODE=b.dataset.m;try{localStorage.setItem("de-cmode",CMODE)}catch(e){}
+    document.querySelectorAll(".cpick .segb").forEach(x=>x.setAttribute("aria-pressed",String(x===b)))});
 }
 
 async function play(){
