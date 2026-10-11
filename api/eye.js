@@ -10,8 +10,13 @@
 
 const crypto = require('crypto');
 
-const DB_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-const DB_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+// Vercelの連携は接頭辞を付けることがある（STORAGE_KV_REST_API_URL など）ので、末尾で探す
+function envEnding(suffix) {
+  const k = Object.keys(process.env).find(k => k.endsWith(suffix) && process.env[k]);
+  return k ? process.env[k] : undefined;
+}
+const DB_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || envEnding('KV_REST_API_URL') || envEnding('REDIS_REST_URL');
+const DB_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || envEnding('KV_REST_API_TOKEN') || envEnding('REDIS_REST_TOKEN');
 const SECRET = process.env.RANK_SECRET || crypto.createHash('sha256').update('eye-rank:' + (DB_TOKEN || '')).digest('hex');
 
 const RANK = 'eye:rank';
