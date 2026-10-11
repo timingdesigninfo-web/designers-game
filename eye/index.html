@@ -1013,7 +1013,7 @@ async function drawCard(avg,jp,en,rows,t,rk){
   x.fillStyle=CH;x.globalAlpha=.7;x.font=`500 20px ${M}`;
   const d=new Date(t||Date.now());x.fillText(`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")}`,72,578);
   x.globalAlpha=1;x.fillStyle=YL;x.font=`500 24px ${M}`;x.fillText("PLAY → "+shareURL().replace(/^https?:\/\//,""),72,545);x.fillStyle=CH;x.globalAlpha=.7;x.font=`500 20px ${M}`;
-  x.textAlign="right";x.fillText(rk?"#デザイナーの目 #ランク戦":"#デザイナーの目",1150,578);x.textAlign="left";x.globalAlpha=1;
+  x.textAlign="right";x.fillText("#デザイナーの目",1150,578);x.textAlign="left";x.globalAlpha=1;
   if(rk){ // ランク戦の順位バッジ（右上）
     const n=rk.isBest?rk.rank:rk.thisRank,lab=rk.isBest?"総合":"今回",line=`${lab} ${n}位 / ${rk.total}人`;
     x.font=`400 36px ${D}`;const bw=x.measureText(line).width+44;
@@ -1027,15 +1027,14 @@ async function drawCard(avg,jp,en,rows,t,rk){
 async function setupShare(avg,jp,en,rows,rk){
   const msg=t=>{const m=$("shareMsg");if(m)m.textContent=t};
   const top=[...rows].sort((a,b)=>b[1]-a[1])[0];
-  const rkLine=rk?(rk.isBest?`ランク戦で総合${rk.rank}位 / ${rk.total}人！`:`ランク戦で今回は${rk.thisRank}位相当（自己ベスト${rk.best}点で総合${rk.rank}位）`):"";
-  const tags=rk?"#デザイナーの目 #ランク戦":"#デザイナーの目";
-  const text=`デザイナーの目、${avg}点で「${jp}」でした。${rkLine||`いちばん得意なのは${top[0]}（${top[1]}点）。`}\n${rows.map(([n,v])=>`${n}${v}`).join(" / ")}\n${tags}`;
+  const rkLine=rk?(rk.isBest?`ランク戦総合${rk.rank}位 / ${rk.total}人`:`ランク戦${rk.thisRank}位相当 / ${rk.total}人`):"";
+  const tags="#デザイナーの目";
+  const text=`${avg}点で「${jp}」でした。${rkLine}\n${rows.map(([n,v])=>`${n}${v}`).join(" / ")}\n${tags}`;
   const url=shareURL();
   const xLen=t=>[...t.replace(/https?:\/\/\S+/g,"x".repeat(23))].reduce((n,c)=>n+(/[\u1100-\uffef]/.test(c)?2:1),0);
   let main=text;
-  if(xLen(main+"\n"+url)>270)main=`デザイナーの目、${avg}点で「${jp}」でした。${rkLine}\n${tags}`;
-  if(xLen(main+"\n"+url)>270)main=`デザイナーの目、${avg}点で「${jp}」でした。\n${tags}`;
-  const body=main+(url?"\n"+url:""); // link goes in the body itself so every share route keeps it
+  if(xLen(main+"\n"+url)>270)main=`${avg}点で「${jp}」でした。${rkLine}\n${tags}`;
+    const body=main+(url?"\n"+url:""); // link goes in the body itself so every share route keeps it
   $("postX").href="https://x.com/intent/post?text="+encodeURIComponent(body); // prefilled where X allows it
   $("copyTxt").onclick=()=>{const t=body;const ok=()=>{msg("投稿文をコピーしました。X の投稿画面で貼り付けてください。");$("copyTxt").textContent="コピーしました"};
     try{navigator.clipboard.writeText(t).then(ok,()=>msg(t))}catch(e){msg(t)}};
