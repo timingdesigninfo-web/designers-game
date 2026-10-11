@@ -1014,7 +1014,7 @@ const TITLES={
 function titleOf(r){
   if(!r)return null;
   if(r.rank<=3&&r.total)return{...TITLES[r.rank],n:r.rank,scope:"総合"};
-  if(r.dayTotal&&r.dayRank<=3)return{...TITLES[r.dayRank],jp:"今日の"+TITLES[r.dayRank].jp,n:r.dayRank,scope:"今日"};
+  if(r.dayTotal&&r.dayRank<=3)return{...TITLES[r.dayRank],n:r.dayRank,scope:"今日"};
   return null;
 }
 function metalGrad(x,c,x0,y0,x1,y1){const g=x.createLinearGradient(x0,y0,x1,y1);g.addColorStop(0,c[0]);g.addColorStop(.45,c[1]);g.addColorStop(.55,c[0]);g.addColorStop(1,c[2]);return g}
@@ -1180,7 +1180,7 @@ async function loadRanking(scope){
   if(!d.list.length){box.innerHTML=`<p class="hint">${want==="today"?"今日はまだ誰もいません。今日の1位を取りにいこう。":"まだ誰もいません。ランク戦で最初の1人になろう。"}</p>`;return}
   const who=e=>e.kind==="x"?`<a href="https://x.com/${encodeURIComponent(e.name)}" target="_blank" rel="noopener">@${esc(e.name)}</a>`:`<span class="rk-name">${esc(e.name)}</span>`;
   const row=e=>{const T=TITLES[e.rank];
-    return`<li class="${e.id===myId?"me":""}${T?` top top${e.rank}`:""}"><span class="rk-n">${e.rank}</span><span class="rk-who">${who(e)}${T?`<small class="rk-title">${want==="today"?"今日の":""}${T.jp}</small>`:""}</span><span class="rk-s">${e.avg}</span></li>`};
+    return`<li class="${e.id===myId?"me":""}${T?` top top${e.rank}`:""}"><span class="rk-n">${e.rank}</span><span class="rk-who">${who(e)}${T?`<small class="rk-title">${T.jp}</small>`:""}</span><span class="rk-s">${e.avg}</span></li>`};
   const draw=all=>{box.innerHTML=`<ol class="rklist">${d.list.slice(0,all?100:10).map(row).join("")}</ol>`+
     (!all&&d.list.length>10?`<button class="ghost" id="rkMore">100位まで見る</button>`:"")+
     (myId?`<p class="hint">あなたは「${esc(shown(me))}」で参加中。<button class="linkbtn" id="rkLeave">ランキングから外す</button></p>`:"");
