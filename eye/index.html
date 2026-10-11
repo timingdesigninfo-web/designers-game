@@ -757,8 +757,9 @@ function intro(){
     </div>
     <div class="playmodes">
       <button class="pm" id="go"><b>通常モード</b><small>気軽に練習。記録はこの端末だけ</small></button>
-      <button class="pm ranked" id="goRank"><b>ランク戦</b><small>名前を入れて総合ランキングに挑戦</small></button>
+      <button class="pm ranked" id="goRank"><b>ランク戦</b><small>${(()=>{const me=lsGet(RK_ME,null);return me&&me.name?`「${esc(shown(me))}」ですぐ挑戦`:"名前を入れて総合ランキングに挑戦"})()}</small></button>
     </div>
+    ${(()=>{const me=lsGet(RK_ME,null);return me&&me.name?`<p class="hint">ランク戦の名前：${esc(shown(me))}<button class="linkbtn" id="rkChange">変える</button></p>`:""})()}
     ${best?`<span class="note">自己ベスト ${best} 点</span>`:""}
   </section>
   <section class="panel" id="rankPanel"><div class="hhead"><div class="rank">RANKING · ランク戦</div><span class="note" id="rkTotal"></span></div><div class="seg rktabs" role="tablist"><button class="segb" data-s="today" role="tab" aria-pressed="true"><b>今日</b><small>0時にリセット</small></button><button class="segb" data-s="all" role="tab" aria-pressed="false"><b>総合</b><small>これまでの自己ベスト</small></button></div><div id="rkList"><p class="hint">読み込み中…</p></div></section>
@@ -766,7 +767,7 @@ function intro(){
   bindHist();
   loadRanking();
   $("go").onclick=newGame;
-  $("goRank").onclick=rankEntry;
+  $("goRank").onclick=goRanked;const ch=$("rkChange");if(ch)ch.onclick=()=>rankEntry();
   document.querySelectorAll(".segb").forEach(b=>b.onclick=()=>{CMODE=b.dataset.m;try{localStorage.setItem("de-cmode",CMODE)}catch(e){}
     document.querySelectorAll(".segb").forEach(x=>x.setAttribute("aria-pressed",String(x===b)))});
 }
@@ -972,7 +973,7 @@ function end(){
     <div class="subrow"><button class="ghost" id="saveImg">画像を保存</button><button class="ghost" id="copyTxt">投稿文をコピー</button></div>
     <p class="hint" id="shareMsg">画像はクリップボードにコピーされます。X の投稿画面で貼り付けてください。</p>
   </section>`;
-  $("again").onclick=S.ranked?rankEntry:newGame;if(S.ranked)$("again").textContent="もう一度ランク戦";
+  $("again").onclick=S.ranked?goRanked:newGame;if(S.ranked)$("again").textContent="もう一度ランク戦";
   $("home").onclick=()=>{intro();const h=$("hist");if(h)h.scrollIntoView({block:"start"})};
   const rows6=ORDER.map(m=>[MODES[m].name,avgOf(m)]);
   if(S.ranked)finishRank(avg,rows6).then(rk=>setupShare(avg,jp,en,rows6,rk));
@@ -1150,7 +1151,17 @@ async function leaveRank(){
   try{await api({action:"delete",kind:me.kind,name:me.name,token:tokenFor(me)});const t=lsGet(RK_T,{});delete t[idOf(me)];lsSet(RK_T,t);loadRanking()}
   catch(e){b.textContent=e.message}
 }
-function rankEntry(){
+// 名前を保存済みなら入力画面を出さずにすぐ始める
+async function goRanked(){
+  const me=lsGet(RK_ME,null);
+  if(!me||!me.name)return rankEntry();
+  const b=$("goRank")||$("again");if(b)b.disabled=true;
+  try{
+    const g=await api({action:"start",kind:me.kind,name:me.name,token:tokenFor(me)});
+    newRankGame({gid:g.gid,seed:g.seed,t0:g.t0,sig:g.sig,kind:g.kind,name:g.name});
+  }catch(x){rankEntry(x.message)}
+}
+function rankEntry(errMsg){
   stopTimer();S.phase="intro";header();
   const me=lsGet(RK_ME,null)||{kind:"name",name:""};
   let kind=me.kind==="x"?"x":"name";
@@ -1184,6 +1195,7 @@ function rankEntry(){
   };
   document.querySelectorAll(".kind .segb").forEach(b=>b.onclick=()=>setKind(b.dataset.k));
   setKind(kind);
+  if(typeof errMsg==="string")$("rkErr").textContent=errMsg;
   $("rkBack").onclick=intro;
   $("rkForm").onsubmit=async e=>{
     e.preventDefault();
