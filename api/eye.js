@@ -52,13 +52,25 @@ async function rateLimited(req) {
   return n > 30;
 }
 
-function cleanHandle(h) {
-  h = String(h || '').trim().replace(/^@/, '');
-  return HANDLE_RE.test(h) ? h : null;
+// 参加者の名前：自由な名前（基本）か、Xのアカウント名
+function identity(body) {
+  if (body.kind === 'x') {
+    const h = String(body.name || '').trim().replace(/^@/, '');
+    if (!HANDLE_RE.test(h)) return null;
+    return { id: 'x:' + h.toLowerCase(), name: h, kind: 'x' };
+  }
+  const n = String(body.name || '').normalize('NFKC').trim().replace(/\s+/g, ' ');
+  const len = [...n].length;
+  if (len < 1 || len > 16 || /[\u0000-\u001f\u007f<>]/.test(n) || n.startsWith('@')) return null;
+  return { id: 'n:' + n.toLowerCase(), name: n, kind: 'name' };
 }
+const BAD_NAME = 'なまえは1〜16文字で入れてください（記号の < > と先頭の @ は使えません）。';
+const BAD_X = 'Xのアカウント名は英数字と _ の15文字以内で入れてください。';
+const badIdentity = body => (body.kind === 'x' ? BAD_X : BAD_NAME);
+const shown = u => (u.kind === 'x' ? '@' : '') + u.name;
 
-async function owner(lower) {
-  const [u] = await db([['HGETALL', userKey(lower)]]);
+async function owner(id) {
+  const [u] = await db([['HGETALL', userKey(id)]]);
   if (!u || !u.length) return null;
   const o = {};
   for (let i = 0; i < u.length; i += 2) o[u[i]] = u[i + 1];
@@ -68,33 +80,33 @@ async function owner(lower) {
 async function top() {
   const [list, total] = await db([['ZREVRANGE', RANK, 0, 99], ['ZCARD', RANK]]);
   if (!list.length) return { total: 0, list: [] };
-  const metas = await db(list.map(h => ['HMGET', userKey(h), 'name', 'best', 'rows', 'bt']));
+  const metas = await db(list.map(id => ['HMGET', userKey(id), 'name', 'kind', 'best', 'rows', 'bt']));
   return {
     total,
-    list: list.map((h, i) => {
-      const [name, best, rows, bt] = metas[i];
-      return { rank: i + 1, handle: name || h, avg: Number(best), rows: rows ? JSON.parse(rows) : null, t: Number(bt) };
+    list: list.map((id, i) => {
+      const [name, kind, best, rows, bt] = metas[i];
+      return { rank: i + 1, id, name: name || id.slice(2), kind: kind || (id.startsWith('x:') ? 'x' : 'name'), avg: Number(best), rows: rows ? JSON.parse(rows) : null, t: Number(bt) };
     }),
   };
 }
 
 async function start(body) {
-  const handle = cleanHandle(body.handle);
-  if (!handle) return [400, { error: 'Xのアカウント名は英数字と _ の15文字以内で入れてください。' }];
-  const u = await owner(handle.toLowerCase());
+  const me = identity(body);
+  if (!me) return [400, { error: badIdentity(body) }];
+  const u = await owner(me.id);
   if (u && !safeEq(sha(String(body.token || '')), u.tok)) {
-    return [409, { error: `@${handle} は別の端末で登録されています。登録した端末で遊ぶか、別のアカウント名を使ってください。` }];
+    return [409, { error: `「${shown(me)}」はほかの人（または別の端末）が使っています。別の名前にするか、登録した端末で遊んでください。` }];
   }
   const gid = crypto.randomBytes(9).toString('hex');
   const seed = crypto.randomInt(1, 1e9);
   const t0 = Date.now();
-  return [200, { gid, seed, t0, sig: sign([gid, seed, t0, handle.toLowerCase()].join('|')) }];
+  return [200, { gid, seed, t0, sig: sign([gid, seed, t0, me.id].join('|')), id: me.id, name: me.name, kind: me.kind }];
 }
 
 async function submit(body) {
-  const handle = cleanHandle(body.handle);
-  if (!handle) return [400, { error: 'アカウント名が正しくありません。' }];
-  const lower = handle.toLowerCase();
+  const me = identity(body);
+  if (!me) return [400, { error: badIdentity(body) }];
+  const lower = me.id;
   const { gid, seed, t0, sig } = body;
   if (!safeEq(sign([gid, seed, t0, lower].join('|')), String(sig || ''))) return [400, { error: 'ランク戦の情報が正しくありません。' }];
   const age = Date.now() - Number(t0);
@@ -113,7 +125,7 @@ async function submit(body) {
   let u = await owner(lower);
   let newToken = null;
   if (u) {
-    if (!safeEq(sha(String(body.token || '')), u.tok)) return [409, { error: `@${handle} は別の端末で登録されています。` }];
+    if (!safeEq(sha(String(body.token || '')), u.tok)) return [409, { error: `「${shown(me)}」はほかの人（または別の端末）が使っています。` }];
   } else {
     newToken = crypto.randomBytes(18).toString('hex');
     u = { tok: sha(newToken), best: '-1' };
@@ -121,7 +133,7 @@ async function submit(body) {
 
   const now = Date.now();
   const isBest = avg > Number(u.best);
-  const cmds = [['HSET', userKey(lower), 'name', handle, 'tok', u.tok, 'last', String(avg), 'lt', String(now), 'plays', String(Number(u.plays || 0) + 1)]];
+  const cmds = [['HSET', userKey(lower), 'name', me.name, 'kind', me.kind, 'tok', u.tok, 'last', String(avg), 'lt', String(now), 'plays', String(Number(u.plays || 0) + 1)]];
   if (isBest) {
     cmds.push(['HSET', userKey(lower), 'best', String(avg), 'rows', JSON.stringify(rows), 'bt', String(now)]);
     cmds.push(['ZADD', RANK, rankScore(avg, now), lower]);
@@ -130,7 +142,8 @@ async function submit(body) {
   const r = await db(cmds);
   const [rank, total, above] = r.slice(-3);
   return [200, {
-    handle,
+    name: me.name,
+    kind: me.kind,
     avg,
     best: isBest ? avg : Number(u.best),
     isBest,
@@ -142,9 +155,9 @@ async function submit(body) {
 }
 
 async function remove(body) {
-  const handle = cleanHandle(body.handle);
-  if (!handle) return [400, { error: 'アカウント名が正しくありません。' }];
-  const lower = handle.toLowerCase();
+  const me = identity(body);
+  if (!me) return [400, { error: badIdentity(body) }];
+  const lower = me.id;
   const u = await owner(lower);
   if (!u) return [200, { removed: false }];
   if (!safeEq(sha(String(body.token || '')), u.tok)) return [403, { error: '登録した端末からだけ外せます。' }];

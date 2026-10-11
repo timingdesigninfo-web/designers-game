@@ -249,12 +249,15 @@ button:focus-visible{outline:3px solid var(--magenta);outline-offset:2px}
 .rklist li:nth-child(-n+3) .rk-n{color:var(--magenta)}
 .rklist li.me{background:color-mix(in srgb,var(--yellow) 22%,transparent)}
 .rk-n{font:400 18px var(--f-display);text-align:right}
+.rk-name{font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kind{max-width:none}
+.handle span[hidden]+input{padding-left:14px}
 .rklist a{color:var(--ink);text-decoration:none;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rk-s{font:500 16px var(--f-mono)}
 #rkMore{margin-top:12px;width:100%}
 .linkbtn{background:none;border:0;padding:0 0 0 6px;color:var(--muted);text-decoration:underline;font:inherit;letter-spacing:0;cursor:pointer}
 .rkform{display:flex;flex-direction:column;gap:10px}
-.handle{display:flex;align-items:center;border:2px solid var(--ink);border-radius:4px;background:var(--paper);max-width:360px}
+.handle{display:flex;align-items:center;border:2px solid var(--ink);border-radius:4px;background:var(--paper)}
 .handle span{padding:0 4px 0 12px;font:500 18px var(--f-mono);color:var(--muted)}
 .handle input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:500 18px var(--f-mono);padding:12px 12px 12px 0;outline:none}
 .handle:focus-within{outline:3px solid var(--magenta);outline-offset:2px}
@@ -724,7 +727,7 @@ function paintTimer(){
 function header(){
   const tot=S.scores.reduce((a,b)=>a+b.s,0);
   $("meta").innerHTML=S.phase==="intro"?`<span>${best?`BEST <b>${best}</b>`:"6 TESTS · 18 ROUNDS"}</span>`:
-    (S.ranked?`<span class="rk-tag">RANKED @${esc(S.ranked.handle)}</span>`:"")+`<span>ROUND <b>${String(Math.min(S.round+1,ROUNDS)).padStart(2,"0")}</b> / ${ROUNDS}</span><span>SCORE <b>${Math.round(tot)}</b></span>`;
+    (S.ranked?`<span class="rk-tag">RANKED ${esc(shown(S.ranked))}</span>`:"")+`<span>ROUND <b>${String(Math.min(S.round+1,ROUNDS)).padStart(2,"0")}</b> / ${ROUNDS}</span><span>SCORE <b>${Math.round(tot)}</b></span>`;
   $("ticks").innerHTML=Array.from({length:ROUNDS},(_,i)=>{const sc=S.scores[i];
     const st=sc?`style="background:color-mix(in srgb,var(--magenta) ${30+sc.s*.7}%,var(--rule))"`:"";
     return`<i class="${!sc&&i===S.round&&S.phase==="play"?"now":""}" ${st}></i>`}).join("");
@@ -751,7 +754,7 @@ function intro(){
     </div>
     <div class="playmodes">
       <button class="pm" id="go"><b>通常モード</b><small>気軽に練習。記録はこの端末だけ</small></button>
-      <button class="pm ranked" id="goRank"><b>ランク戦</b><small>Xのアカウント名で総合ランキングに挑戦</small></button>
+      <button class="pm ranked" id="goRank"><b>ランク戦</b><small>名前を入れて総合ランキングに挑戦</small></button>
     </div>
     ${best?`<span class="note">自己ベスト ${best} 点</span>`:""}
   </section>
@@ -958,7 +961,7 @@ function end(){
     <div class="rec"><div class="rank">「${MODES[weak].name}」を鍛える本</div><ul>${(WEAK_BOOKS[weak]||[]).map(b=>bookLi(b)).join("")}</ul></div>
     <div class="actions"><button id="again">もう一度</button><button class="ghost" id="home">これまでの成績</button></div>
   </section>
-  ${S.ranked?`<section class="panel" id="rkRes"><div class="rank">RANKING · @${esc(S.ranked.handle)}</div><p class="hint">ランキングに登録しています…</p></section>`:""}
+  ${S.ranked?`<section class="panel" id="rkRes"><div class="rank">RANKING · ${esc(shown(S.ranked))}</div><p class="hint">ランキングに登録しています…</p></section>`:""}
   <section class="panel share">
     <div class="rank">SHARE</div>
     <img id="card" alt="結果カード：${jp} ${avg}点">
@@ -1016,7 +1019,7 @@ async function drawCard(avg,jp,en,rows,t,rk){
     x.font=`400 36px ${D}`;const bw=x.measureText(line).width+44;
     x.fillStyle=PK;x.fillRect(1150-bw,62,bw,62);
     x.fillStyle="#fff";x.textAlign="right";x.textBaseline="middle";x.fillText(line,1150-22,95);
-    x.fillStyle=CH;x.font=`500 22px ${M}`;x.globalAlpha=.85;x.fillText("RANKED @"+rk.handle,1150,146);
+    x.fillStyle=CH;x.font=`500 22px ${M}`;x.globalAlpha=.85;x.fillText("RANKED "+(rk.who||""),1150,146);
     x.globalAlpha=1;x.textAlign="left";x.textBaseline="alphabetic";
   }
   return await new Promise(r=>c.toBlob(r,"image/png"));
@@ -1103,12 +1106,14 @@ async function bindHist(){
   for(const img of document.querySelectorAll(".thumb img")){if(!document.body.contains(img))return;img.src=URL.createObjectURL(await card(+img.dataset.i))}
 }
 
-/* ---------- ranked mode: X handle, opt-in, all-time best ---------- */
-const API="/api/eye",RK_H="de-rank-handle",RK_T="de-rank-tokens";
+/* ---------- ranked mode: free name (default) or X account, opt-in, all-time best ---------- */
+const API="/api/eye",RK_ME="de-rank-me",RK_T="de-rank-tokens";
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const lsGet=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}};
 const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
-const tokenFor=h=>(lsGet(RK_T,{})||{})[h.toLowerCase()]||null;
+const shown=m=>m?(m.kind==="x"?"@":"")+m.name:"";
+const idOf=m=>m?(m.kind==="x"?"x:"+m.name.toLowerCase():"n:"+m.name.normalize("NFKC").trim().replace(/\s+/g," ").toLowerCase()):"";
+const tokenFor=m=>(lsGet(RK_T,{})||{})[idOf(m)]||null;
 async function api(body){
   const r=await fetch(API,body?{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}:{});
   let j={};try{j=await r.json()}catch(e){}
@@ -1119,52 +1124,74 @@ async function loadRanking(){
   const box=$("rkList");if(!box)return;
   let d;try{d=await api()}catch(e){box.innerHTML=`<p class="hint">${esc(e.message)}</p>`;return}
   if(!$("rkList"))return;
-  const mine=(lsGet(RK_H,"")||"").toLowerCase();
+  const me=lsGet(RK_ME,null),myId=me&&tokenFor(me)?idOf(me):"";
   $("rkTotal").textContent=d.total?`${d.total} 人参加`:"";
   if(!d.list.length){box.innerHTML=`<p class="hint">まだ誰もいません。ランク戦で最初の1人になろう。</p>`;return}
-  const row=e=>`<li class="${e.handle.toLowerCase()===mine?"me":""}"><span class="rk-n">${e.rank}</span><a href="https://x.com/${encodeURIComponent(e.handle)}" target="_blank" rel="noopener">@${esc(e.handle)}</a><span class="rk-s">${e.avg}</span></li>`;
+  const who=e=>e.kind==="x"?`<a href="https://x.com/${encodeURIComponent(e.name)}" target="_blank" rel="noopener">@${esc(e.name)}</a>`:`<span class="rk-name">${esc(e.name)}</span>`;
+  const row=e=>`<li class="${e.id===myId?"me":""}"><span class="rk-n">${e.rank}</span>${who(e)}<span class="rk-s">${e.avg}</span></li>`;
   const draw=all=>{box.innerHTML=`<ol class="rklist">${d.list.slice(0,all?100:10).map(row).join("")}</ol>`+
     (!all&&d.list.length>10?`<button class="ghost" id="rkMore">100位まで見る</button>`:"")+
-    (mine&&tokenFor(mine)?`<p class="hint">あなたは @${esc(lsGet(RK_H,""))} で参加中。<button class="linkbtn" id="rkLeave">ランキングから外す</button></p>`:"");
+    (myId?`<p class="hint">あなたは「${esc(shown(me))}」で参加中。<button class="linkbtn" id="rkLeave">ランキングから外す</button></p>`:"");
     const m=$("rkMore");if(m)m.onclick=()=>draw(true);
     const l=$("rkLeave");if(l)l.onclick=leaveRank};
   draw(false);
 }
 let leaveArmed=null;
 async function leaveRank(){
-  const b=$("rkLeave"),h=lsGet(RK_H,"");
+  const b=$("rkLeave"),me=lsGet(RK_ME,null);
   if(!leaveArmed){b.textContent="もう一度押すと外れます";leaveArmed=setTimeout(()=>{leaveArmed=null;const x=$("rkLeave");if(x)x.textContent="ランキングから外す"},2500);return}
   clearTimeout(leaveArmed);leaveArmed=null;
-  try{await api({action:"delete",handle:h,token:tokenFor(h)});const t=lsGet(RK_T,{});delete t[h.toLowerCase()];lsSet(RK_T,t);loadRanking()}
+  try{await api({action:"delete",kind:me.kind,name:me.name,token:tokenFor(me)});const t=lsGet(RK_T,{});delete t[idOf(me)];lsSet(RK_T,t);loadRanking()}
   catch(e){b.textContent=e.message}
 }
 function rankEntry(){
   stopTimer();S.phase="intro";header();
-  const h=lsGet(RK_H,"");
+  const me=lsGet(RK_ME,null)||{kind:"name",name:""};
+  let kind=me.kind==="x"?"x":"name";
+  const saved={name:me.kind==="name"?me.name:"",x:me.kind==="x"?me.name:""};
   $("main").innerHTML=`<section class="panel">
     <div class="rank">RANKED · ランク戦</div>
     <h2>総合ランキングに<br>挑戦する</h2>
     <p>18ラウンドの平均点で順位が決まります。何度でも挑戦でき、いちばん高い点数が残ります。</p>
     <form id="rkForm" class="rkform" novalidate>
-      <label for="rkHandle" class="cpl">Xのアカウント名</label>
-      <div class="handle"><span>@</span><input id="rkHandle" name="handle" autocomplete="username" autocapitalize="off" spellcheck="false" inputmode="email" maxlength="16" placeholder="your_name" value="${esc(h)}"></div>
-      <label class="agree"><input type="checkbox" id="rkAgree"${h?" checked":""}> アカウント名と点数をランキングで公開することに同意します</label>
-      <p class="hint">登録した端末でだけ、同じアカウント名で記録を更新できます。ランキングからはいつでも外せます。</p>
+      <div class="seg kind" role="radiogroup" aria-label="ランキングに載せる名前">
+        <button type="button" class="segb" data-k="name" role="radio"><b>なまえ</b><small>自由な名前で参加</small></button>
+        <button type="button" class="segb" data-k="x" role="radio"><b>X</b><small>アカウント名で参加</small></button>
+      </div>
+      <label for="rkName" class="cpl" id="rkLabel"></label>
+      <div class="handle"><span id="rkAt">@</span><input id="rkName" name="rkName" autocapitalize="off" spellcheck="false" maxlength="16"></div>
+      <label class="agree"><input type="checkbox" id="rkAgree"${me.name?" checked":""}> この名前と点数をランキングで公開することに同意します</label>
+      <p class="hint">登録した端末でだけ、同じ名前で記録を更新できます。ランキングからはいつでも外せます。</p>
       <p class="rk-err" id="rkErr" role="alert"></p>
       <div class="actions"><button id="rkGo" type="submit">ランク戦をはじめる</button><button class="ghost" type="button" id="rkBack">戻る</button></div>
     </form>
   </section>`;
+  const inp=$("rkName");
+  const setKind=k=>{
+    saved[kind]=inp.value;kind=k;
+    document.querySelectorAll(".kind .segb").forEach(b=>{const on=b.dataset.k===k;b.setAttribute("aria-pressed",String(on));b.setAttribute("aria-checked",String(on))});
+    $("rkLabel").textContent=k==="x"?"Xのアカウント名":"ランキングに出す名前";
+    $("rkAt").hidden=k!=="x";
+    inp.placeholder=k==="x"?"your_name":"例：かーにんぐ職人";
+    inp.inputMode=k==="x"?"email":"text";inp.autocomplete=k==="x"?"username":"nickname";
+    inp.value=saved[k]||"";$("rkErr").textContent="";
+  };
+  document.querySelectorAll(".kind .segb").forEach(b=>b.onclick=()=>setKind(b.dataset.k));
+  setKind(kind);
   $("rkBack").onclick=intro;
   $("rkForm").onsubmit=async e=>{
     e.preventDefault();
-    const err=t=>$("rkErr").textContent=t,handle=$("rkHandle").value.trim().replace(/^@/,"");
-    if(!/^[A-Za-z0-9_]{1,15}$/.test(handle))return err("Xのアカウント名を、英数字と _ の15文字以内で入れてください。");
+    const err=t=>$("rkErr").textContent=t;
+    let name=inp.value.trim();
+    if(kind==="x"){name=name.replace(/^@/,"");if(!/^[A-Za-z0-9_]{1,15}$/.test(name))return err("Xのアカウント名を、英数字と _ の15文字以内で入れてください。")}
+    else{name=name.normalize("NFKC").replace(/\s+/g," ");const n=[...name].length;if(!n)return err("ランキングに出す名前を入れてください。");if(n>16)return err("名前は16文字以内にしてください。");if(/[<>]/.test(name)||name.startsWith("@"))return err("記号の < > と先頭の @ は使えません。")}
     if(!$("rkAgree").checked)return err("ランキングに載せるには、公開への同意が必要です。");
     $("rkGo").disabled=true;err("");
+    const who={kind,name};
     try{
-      const g=await api({action:"start",handle,token:tokenFor(handle)});
-      lsSet(RK_H,handle);
-      newRankGame({...g,handle});
+      const g=await api({action:"start",kind,name,token:tokenFor(who)});
+      lsSet(RK_ME,{kind:g.kind,name:g.name});
+      newRankGame({gid:g.gid,seed:g.seed,t0:g.t0,sig:g.sig,kind:g.kind,name:g.name});
     }catch(x){err(x.message);$("rkGo").disabled=false}
   };
 }
@@ -1172,9 +1199,10 @@ async function finishRank(avg,rows6){
   const box=()=>$("rkRes"),rk=S.ranked;
   if(rk.result)return showRank(rk.result);
   try{
-    const r=await api({action:"submit",gid:rk.gid,seed:rk.seed,t0:rk.t0,sig:rk.sig,handle:rk.handle,token:tokenFor(rk.handle),avg,rows:rows6.map(x=>x[1])});
-    if(r.token){const t=lsGet(RK_T,{});t[rk.handle.toLowerCase()]=r.token;lsSet(RK_T,t)}
-    rk.result={handle:r.handle,rank:r.rank,thisRank:r.thisRank,total:r.total,best:r.best,isBest:r.isBest};
+    const who={kind:rk.kind,name:rk.name};
+    const r=await api({action:"submit",gid:rk.gid,seed:rk.seed,t0:rk.t0,sig:rk.sig,kind:rk.kind,name:rk.name,token:tokenFor(who),avg,rows:rows6.map(x=>x[1])});
+    if(r.token){const t=lsGet(RK_T,{});t[idOf(who)]=r.token;lsSet(RK_T,t)}
+    rk.result={who:shown(who),rank:r.rank,thisRank:r.thisRank,total:r.total,best:r.best,isBest:r.isBest};
     const hs=loadHist();if(hs.length){hs[hs.length-1].rk=rk.result;saveHist(hs)}
     return showRank(rk.result);
   }catch(e){
@@ -1184,7 +1212,7 @@ async function finishRank(avg,rows6){
 }
 function showRank(r){
   const b=$("rkRes");
-  if(b)b.innerHTML=`<div class="rank">RANKING · @${esc(r.handle)}</div>
+  if(b)b.innerHTML=`<div class="rank">RANKING · ${esc(r.who)}</div>
     <div class="rk-big"><span class="big">${r.isBest?r.rank:r.thisRank}</span><span>位 / ${r.total}人${r.isBest?"":"相当"}</span></div>
     <p class="hint">${r.isBest?`自己ベスト更新。総合ランキングは ${r.rank} 位です。`:`今回の点数なら ${r.thisRank} 位相当。自己ベスト ${r.best} 点で、総合 ${r.rank} 位にいます。`}</p>
     <div class="actions"><button class="ghost" id="rkSee">ランキングを見る</button></div>`;
