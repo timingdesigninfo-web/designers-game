@@ -983,7 +983,7 @@ function end(){
     <img id="card" alt="結果カード：${jp} ${avg}点">
     <a class="btn xpost" id="postX" target="_blank" rel="noopener">X でポスト</a>
     <div class="subrow"><button class="ghost" id="saveImg">画像を保存</button><button class="ghost" id="copyTxt">投稿文をコピー</button></div>
-    <p class="hint" id="shareMsg">画像はクリップボードにコピーされます。X の投稿画面で貼り付けてください。</p>
+    <p class="hint" id="shareMsg"></p>
   </section>`;
   $("again").onclick=S.ranked?goRanked:newGame;if(S.ranked)$("again").textContent="もう一度ランク戦";
   $("home").onclick=()=>{intro();const h=$("hist");if(h)h.scrollIntoView({block:"start"})};
@@ -1099,17 +1099,24 @@ async function setupShare(avg,jp,en,rows,rk){
   const fname=`designers-eye-${avg}.png`;
   $("saveImg").onclick=()=>saveBlob(blob,fname,msg);
   let file=null;try{file=new File([blob],fname,{type:"image/png"})}catch(e){}
-  const canShareFile=!!(file&&!window.claude&&navigator.canShare&&navigator.canShare({files:[file]}));
-  $("postX").onclick=e=>{
-    if(canShareFile){ // hosted page on a phone: share sheet -> X gets image + text
-      e.preventDefault();navigator.share({files:[file],text:body}).catch(()=>{});
-      // some apps keep only the image from a share sheet, so keep the text (with link) ready to paste
-      try{navigator.clipboard.writeText(body).then(()=>msg("投稿文（リンク入り）もコピーしました。本文が入っていなければ貼り付けてください。"),()=>{})}catch(_){}
-      return;
-    }
-    // otherwise the link opens X with the text; put the image on the clipboard so it can be pasted (desktop)
-    try{navigator.clipboard.write([new ClipboardItem({"image/png":blob})])
-      .then(()=>msg("画像をクリップボードにコピーしました。X の投稿画面で貼り付けてください。ログイン後に本文が消えていたら「投稿文をコピー」で入れ直せます。"),()=>{})}catch(_){}
+  // Xへの投稿：結果画像をサーバーに置き、その人専用のURL（リンクカード）で投稿する
+  let cardURL=null;
+  const makeCardURL=async()=>{
+    if(cardURL)return cardURL;
+    const bmp=await createImageBitmap(blob),cv=document.createElement("canvas");cv.width=bmp.width;cv.height=bmp.height;
+    cv.getContext("2d").drawImage(bmp,0,0);
+    const r=await api({action:"card",img:cv.toDataURL("image/jpeg",.86),text:main.split("\n")[0]});
+    cardURL=r.url;return cardURL;
+  };
+  $("postX").onclick=async e=>{
+    e.preventDefault();
+    const w=window.open("","_blank");
+    msg("投稿の準備をしています…");
+    let link=url;
+    try{link=await makeCardURL()}catch(_){}
+    const intent="https://x.com/intent/post?text="+encodeURIComponent(main+"\n"+link);
+    if(w)w.location.href=intent;else location.href=intent;
+    msg("");
   };
 
 }

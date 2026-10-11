@@ -183,6 +183,57 @@ async function submit(body) {
   }];
 }
 
+// ---- 結果カード（Xのリンクカード用の画像） ----
+const SITE = 'https://designers-game.vercel.app';
+const CARD_TTL = 90 * 86400; // 90日で自動削除
+const cardKey = id => 'eye:card:' + id;
+const CARD_ID_RE = /^[a-z0-9]{10}$/;
+
+async function card(body) {
+  const img = String(body.img || '').replace(/^data:image\/jpeg;base64,/, '');
+  if (!img.startsWith('/9j/') || img.length > 600000) return [400, { error: '画像を作れませんでした。' }];
+  const text = String(body.text || '').slice(0, 200);
+  const id = crypto.randomBytes(8).toString('base64').replace(/[^a-zA-Z0-9]/g, '').toLowerCase().padEnd(10, '0').slice(0, 10);
+  await db([['HSET', cardKey(id), 'img', img, 'text', text], ['EXPIRE', cardKey(id), CARD_TTL]]);
+  return [200, { id, url: `${SITE}/eye/r/${id}` }];
+}
+
+const escHtml = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+// /eye/card/<id>.jpg → 画像
+async function cardImage(res, id) {
+  if (!CARD_ID_RE.test(id)) { res.statusCode = 404; return res.end('not found'); }
+  const [img] = await db([['HGET', cardKey(id), 'img']]);
+  if (!img) { res.statusCode = 302; res.setHeader('Location', SITE + '/eye/og.png'); return res.end(); }
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'image/jpeg');
+  res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  return res.end(Buffer.from(img, 'base64'));
+}
+
+// /eye/r/<id> → Xが読むためのカード情報を返し、人はゲームのトップへ移動
+async function cardPage(res, id) {
+  const ok = CARD_ID_RE.test(id);
+  const [text] = ok ? await db([['HGET', cardKey(id), 'text']]) : [null];
+  const image = text != null ? `${SITE}/eye/card/${id}.jpg` : `${SITE}/eye/og.png`;
+  const desc = text || '定規なしで中心・太さ・色・分割・角度・カーニングを当てる18ラウンド。';
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  return res.end(`<!doctype html><html lang="ja"><head><meta charset="utf-8">
+<title>デザイナーの目</title>
+<meta property="og:title" content="デザイナーの目">
+<meta property="og:description" content="${escHtml(desc)}">
+<meta property="og:type" content="website">
+<meta property="og:url" content="${SITE}/eye/r/${ok ? id : ''}">
+<meta property="og:image" content="${image}">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="${image}">
+<meta http-equiv="refresh" content="0;url=/eye/">
+</head><body><script>location.replace('/eye/')</script><a href="/eye/">デザイナーの目で遊ぶ</a></body></html>`);
+}
+
 async function remove(body) {
   const me = identity(body);
   if (!me) return [400, { error: badIdentity(body) }];
@@ -197,13 +248,19 @@ async function remove(body) {
 module.exports = async (req, res) => {
   if (!DB_URL || !DB_TOKEN) return send(res, 503, { error: 'ランキングの準備中です（データベース未接続）。' });
   try {
-    if (req.method === 'GET') return send(res, 200, await top((req.query && req.query.scope) || new URL(req.url, 'http://x').searchParams.get('scope')));
+    const u = new URL(req.url, 'http://x'), q = u.searchParams, rq = req.query || {};
+    // 書き換え後でも元のパスでも受けられるように
+    const cardId = rq.card || q.get('card') || (u.pathname.match(/\/eye\/card\/([a-z0-9]+)\.jpg$/) || [])[1];
+    const pageId = rq.r || q.get('r') || (u.pathname.match(/\/eye\/r\/([a-z0-9]+)\/?$/) || [])[1];
+    if (req.method === 'GET' && cardId) return cardImage(res, cardId);
+    if (req.method === 'GET' && pageId) return cardPage(res, pageId);
+    if (req.method === 'GET') return send(res, 200, await top(q.get('scope')));
     if (req.method !== 'POST') return send(res, 405, { error: 'method' });
     if (await rateLimited(req)) return send(res, 429, { error: '少し時間をおいてからもう一度どうぞ。' });
     let body = req.body;
     if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
     body = body || {};
-    const fn = { start, submit, delete: remove }[body.action];
+    const fn = { start, submit, delete: remove, card }[body.action];
     if (!fn) return send(res, 400, { error: 'action' });
     const [code, out] = await fn(body);
     return send(res, code, out);

@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/eye/r/:id", "destination": "/api/eye?r=:id" },
+    { "source": "/eye/card/:id.jpg", "destination": "/api/eye?card=:id" }
+  ]
+}
