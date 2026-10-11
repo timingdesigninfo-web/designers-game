@@ -1295,7 +1295,7 @@ function showRank(r){
       <div><small>総合</small><div class="rk-big"><span class="big">${aN}</span><span>位 / ${r.total}人</span></div></div>
     </div>
     ${(T=>T?`<div class="earned" style="--m0:${T.metal[0]};--m1:${T.metal[1]};--m2:${T.metal[2]}"><span class="earned-medal">${T.n}</span><div><small>称号を獲得</small><b class="earned-jp">${T.jp}</b><span class="earned-en">${T.en}</span></div></div>`:"")(titleOf(r))}
-    <p class="hint">${r.isBest?"自己ベスト更新！":`順位はあなたのベスト（総合 ${r.best} 点${r.dayTotal&&!r.isDayBest?`・今日 ${r.dayBest} 点`:""}）で決まります。`}</p>
+    ${r.isBest?`<p class="hint">自己ベスト更新！</p>`:""}
     <div class="actions"><button class="ghost" id="rkSee">ランキングを見る</button></div>`;
   const T=titleOf(r),ej=$("endJp");
   if(T&&ej){ej.textContent=T.jp;ej.className="metal-text";ej.style.cssText=`--m0:${T.metal[0]};--m1:${T.metal[1]};--m2:${T.metal[2]}`;const rk=ej.closest(".panel").querySelector(".rank");if(rk)rk.textContent=T.en}
