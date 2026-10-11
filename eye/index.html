@@ -252,6 +252,14 @@ button:focus-visible{outline:3px solid var(--magenta);outline-offset:2px}
 .rk-name{font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kind{max-width:none}
 .handle span[hidden]+input{padding-left:14px}
+.rk-who{display:flex;flex-direction:column;min-width:0;line-height:1.3}
+.rk-title{font:700 11px var(--f-body);letter-spacing:.08em;color:var(--muted)}
+.rklist li.top .rk-n{width:2.1em;height:2.1em;display:grid;place-items:center;border-radius:50%;font-size:15px;margin-left:auto;color:#2a2008!important;box-shadow:inset 0 0 0 2px rgba(0,0,0,.15)}
+.rklist li.top1 .rk-n{background:linear-gradient(135deg,#fff3b0,#e2b53a 50%,#9a6f12)}
+.rklist li.top2 .rk-n{background:linear-gradient(135deg,#ffffff,#c3cad2 50%,#6f7a86)}
+.rklist li.top3 .rk-n{background:linear-gradient(135deg,#ffd9b5,#c47a3d 50%,#7a431b)}
+.rklist li.top1 .rk-title{color:#a87a12}.rklist li.top3 .rk-title{color:#a5602a}
+.rk-earned{display:inline-block;margin-top:2px;padding:4px 12px;border-radius:99px;font-weight:700;color:#2a2008;background:linear-gradient(135deg,#fff3b0,#e2b53a 50%,#9a6f12)}
 .rklist a{color:var(--ink);text-decoration:none;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rk-s{font:500 16px var(--f-mono)}
 #rkMore{margin-top:12px;width:100%}
@@ -996,19 +1004,49 @@ const SHARE_URL="https://designers-game.vercel.app/eye/"; // public address of t
 function shareURL(){ // own hosting -> its own address; anywhere inside Claude (or a local file) -> the public game link
   try{const h=location.hostname;if(/^https?:$/.test(location.protocol)&&h&&!/(claude|anthropic|usercontent|localhost|127\.0\.0\.1)/i.test(h))return location.origin+location.pathname}catch(e){}
   return SHARE_URL}
+/* ---------- 上位3人の称号 ---------- */
+const TITLES={
+  1:{jp:"神の目",en:"GOD EYE",metal:["#fff3b0","#e2b53a","#9a6f12"],ink:"#4a3505"},
+  2:{jp:"鷹の目",en:"HAWK EYE",metal:["#ffffff","#c3cad2","#6f7a86"],ink:"#2a3038"},
+  3:{jp:"職人の目",en:"CRAFTSMAN EYE",metal:["#ffd9b5","#c47a3d","#7a431b"],ink:"#3d200a"}
+};
+// 総合の上位3人を優先し、なければ今日の上位3人に「今日の」を付ける
+function titleOf(r){
+  if(!r)return null;
+  if(r.rank<=3&&r.total)return{...TITLES[r.rank],n:r.rank,scope:"総合"};
+  if(r.dayTotal&&r.dayRank<=3)return{...TITLES[r.dayRank],jp:"今日の"+TITLES[r.dayRank].jp,n:r.dayRank,scope:"今日"};
+  return null;
+}
+function metalGrad(x,c,x0,y0,x1,y1){const g=x.createLinearGradient(x0,y0,x1,y1);g.addColorStop(0,c[0]);g.addColorStop(.45,c[1]);g.addColorStop(.55,c[0]);g.addColorStop(1,c[2]);return g}
+function drawMedal(x,cx,cy,R,T,D){
+  x.save();
+  x.shadowColor="rgba(0,0,0,.35)";x.shadowBlur=18;x.shadowOffsetY=6;
+  x.fillStyle=metalGrad(x,T.metal,cx-R,cy-R,cx+R,cy+R);x.beginPath();x.arc(cx,cy,R,0,7);x.fill();
+  x.restore();
+  x.strokeStyle=T.metal[2];x.lineWidth=3;x.beginPath();x.arc(cx,cy,R*.8,0,7);x.stroke();
+  for(let i=0;i<24;i++){const a=i*Math.PI/12;x.fillStyle=T.metal[2];x.beginPath();x.arc(cx+Math.cos(a)*R*.9,cy+Math.sin(a)*R*.9,2,0,7);x.fill()}
+  x.fillStyle=T.ink;x.font=`400 ${Math.round(R*1.05)}px ${D}`;x.textAlign="center";x.textBaseline="middle";x.fillText(String(T.n),cx,cy+R*.06);
+  x.textAlign="left";x.textBaseline="alphabetic";
+}
 async function drawCard(avg,jp,en,rows,t,rk){
+  const T=titleOf(rk);if(T){jp=T.jp;en=T.en}
   try{await Promise.race([Promise.all(['400 60px "Dela Gothic One"','700 26px "Zen Kaku Gothic New"','500 22px "IBM Plex Mono"'].map(f=>document.fonts.load(f,"デザイナーの目0123456789"+jp))),new Promise(r=>setTimeout(r,2000))])}catch(e){}
   const W=1200,H=630,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
   const MAT="#2d5a4b",LN="#3c6c5c",MJ="#4d7f6e",CH="#f3f6f0",PK="#ff4aa0",YL="#f2c200";
   x.fillStyle=MAT;x.fillRect(0,0,W,H);
   for(let i=0;i<=W;i+=30){x.fillStyle=i%150?LN:MJ;x.fillRect(i,0,1,H)}
   for(let j=0;j<=H;j+=30){x.fillStyle=j%150?LN:MJ;x.fillRect(0,j,W,1)}
+  if(T){ // 称号つき：金属の額縁と、かすかな光
+    const glow=x.createRadialGradient(1060,110,10,1060,110,520);glow.addColorStop(0,T.metal[0]+"30");glow.addColorStop(1,"rgba(0,0,0,0)");x.fillStyle=glow;x.fillRect(0,0,W,H);
+    x.lineWidth=16;x.strokeStyle=metalGrad(x,T.metal,0,0,W,H);x.strokeRect(8,8,W-16,H-16);
+    x.lineWidth=2;x.strokeStyle=T.metal[1];x.strokeRect(26,26,W-52,H-52);
+  }
   const D='"Dela Gothic One","Hiragino Sans",sans-serif',B='"Zen Kaku Gothic New","Hiragino Sans",sans-serif',M='"IBM Plex Mono",Menlo,monospace';
   x.strokeStyle=CH;x.lineWidth=3;x.beginPath();x.arc(92,92,16,0,7);x.moveTo(92,64);x.lineTo(92,120);x.moveTo(64,92);x.lineTo(120,92);x.stroke();
   x.fillStyle=CH;x.font=`400 40px ${D}`;x.textBaseline="middle";x.fillText("デザイナーの目",138,94);
   x.textBaseline="alphabetic";
-  x.fillStyle=YL;x.font=`500 22px ${M}`;x.fillText(en.split("").join(String.fromCharCode(8202)),72,206);
-  x.fillStyle=CH;x.font=`400 ${jp.length>7?50:62}px ${D}`;x.fillText(jp,70,282);
+  x.fillStyle=T?metalGrad(x,T.metal,72,180,420,210):YL;x.font=`500 22px ${M}`;x.fillText(en.split("").join(String.fromCharCode(8202)),72,206);
+  x.fillStyle=T?metalGrad(x,T.metal,70,220,470,290):CH;x.font=`400 ${jp.length>7?50:T?72:62}px ${D}`;x.fillText(jp,70,282);x.fillStyle=CH;
   x.font=`400 200px ${D}`;x.fillText(String(avg),62,500);const sw=x.measureText(String(avg)).width;
   x.font=`700 34px ${B}`;x.globalAlpha=.75;x.fillText("/ 100",80+sw,496);x.globalAlpha=1;
   rows.forEach(([n,v],i)=>{const y=180+i*62;x.fillStyle=CH;x.font=`700 26px ${B}`;x.fillText(n,660,y+9);
@@ -1018,7 +1056,12 @@ async function drawCard(avg,jp,en,rows,t,rk){
   const d=new Date(t||Date.now());x.fillText(`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")}`,72,578);
   x.globalAlpha=1;x.fillStyle=YL;x.font=`500 24px ${M}`;x.fillText("PLAY → "+shareURL().replace(/^https?:\/\//,""),72,545);x.fillStyle=CH;x.globalAlpha=.7;x.font=`500 20px ${M}`;
   x.textAlign="right";x.fillText("#デザイナーの目",1150,578);x.textAlign="left";x.globalAlpha=1;
-  if(rk){ // ランク戦の順位バッジ（右上）：今日を大きく、総合を小さく
+  if(rk&&T){ // 称号つき：右上にメダル
+    const p=rkParts(rk),line=T.scope==="総合"?p.all:p.day,sub=[T.scope==="総合"?p.day:p.all,rk.who].filter(Boolean).join("　");
+    drawMedal(x,1088,104,58,T,D);
+    x.textAlign="right";x.fillStyle=metalGrad(x,T.metal,600,60,1010,110);x.font=`400 36px ${D}`;x.fillText(line,1010,104);
+    x.fillStyle=CH;x.font=`700 20px ${B}`;x.globalAlpha=.9;x.fillText(sub,1010,140);x.globalAlpha=1;x.textAlign="left";
+  }else if(rk){ // ランク戦の順位バッジ（右上）：今日を大きく、総合を小さく
     const p=rkParts(rk),line=p.day||p.all,sub=p.day?p.all:"";
     x.font=`400 34px ${D}`;const bw=x.measureText(line).width+44;
     x.fillStyle=PK;x.fillRect(1150-bw,58,bw,60);
@@ -1033,6 +1076,7 @@ async function setupShare(avg,jp,en,rows,rk){
   const top=[...rows].sort((a,b)=>b[1]-a[1])[0];
   const rkLine=rk?(p=>p.day?`${p.day}・${p.all}`:p.all)(rkParts(rk)):"";
   const tags="#デザイナーの目";
+  const T=titleOf(rk);if(T)jp=T.jp;
   const text=`${avg}点で「${jp}」でした。${rkLine}\n${rows.map(([n,v])=>`${n}${v}`).join(" / ")}\n${tags}`;
   const url=shareURL();
   const xLen=t=>[...t.replace(/https?:\/\/\S+/g,"x".repeat(23))].reduce((n,c)=>n+(/[\u1100-\uffef]/.test(c)?2:1),0);
@@ -1135,7 +1179,8 @@ async function loadRanking(scope){
   $("rkTotal").textContent=d.total?`${want==="today"?"今日 ":""}${d.total} 人参加`:"";
   if(!d.list.length){box.innerHTML=`<p class="hint">${want==="today"?"今日はまだ誰もいません。今日の1位を取りにいこう。":"まだ誰もいません。ランク戦で最初の1人になろう。"}</p>`;return}
   const who=e=>e.kind==="x"?`<a href="https://x.com/${encodeURIComponent(e.name)}" target="_blank" rel="noopener">@${esc(e.name)}</a>`:`<span class="rk-name">${esc(e.name)}</span>`;
-  const row=e=>`<li class="${e.id===myId?"me":""}"><span class="rk-n">${e.rank}</span>${who(e)}<span class="rk-s">${e.avg}</span></li>`;
+  const row=e=>{const T=TITLES[e.rank];
+    return`<li class="${e.id===myId?"me":""}${T?` top top${e.rank}`:""}"><span class="rk-n">${e.rank}</span><span class="rk-who">${who(e)}${T?`<small class="rk-title">${want==="today"?"今日の":""}${T.jp}</small>`:""}</span><span class="rk-s">${e.avg}</span></li>`};
   const draw=all=>{box.innerHTML=`<ol class="rklist">${d.list.slice(0,all?100:10).map(row).join("")}</ol>`+
     (!all&&d.list.length>10?`<button class="ghost" id="rkMore">100位まで見る</button>`:"")+
     (myId?`<p class="hint">あなたは「${esc(shown(me))}」で参加中。<button class="linkbtn" id="rkLeave">ランキングから外す</button></p>`:"");
@@ -1241,6 +1286,7 @@ function showRank(r){
       ${r.dayTotal?`<div><small>今日</small><div class="rk-big"><span class="big">${dN}</span><span>位 / ${r.dayTotal}人</span></div></div>`:""}
       <div><small>総合</small><div class="rk-big"><span class="big">${aN}</span><span>位 / ${r.total}人</span></div></div>
     </div>
+    ${(T=>T?`<p><span class="rk-earned" style="background:linear-gradient(135deg,${T.metal[0]},${T.metal[1]} 50%,${T.metal[2]})">称号「${T.jp}」</span></p>`:"")(titleOf(r))}
     <p class="hint">${r.isBest?"自己ベスト更新！":`順位はあなたのベスト（総合 ${r.best} 点${r.dayTotal&&!r.isDayBest?`・今日 ${r.dayBest} 点`:""}）で決まります。`}</p>
     <div class="actions"><button class="ghost" id="rkSee">ランキングを見る</button></div>`;
   const s=$("rkSee");if(s)s.onclick=()=>{intro();const p=$("rankPanel");if(p)p.scrollIntoView({block:"start"})};
