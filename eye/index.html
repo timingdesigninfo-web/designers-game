@@ -1217,19 +1217,19 @@ async function finishRank(avg,rows6){
   }
 }
 function rkParts(r){ // 今日と総合の表示用テキスト
-  const day=r.dayTotal?(r.isDayBest?`今日${r.dayRank}位 / ${r.dayTotal}人`:`今日${r.dayThisRank}位相当 / ${r.dayTotal}人`):"";
-  const all=r.isBest?`総合${r.rank}位 / ${r.total}人`:`総合${r.thisRank}位相当 / ${r.total}人`;
+  const day=r.dayTotal?`今日${r.dayRank}位 / ${r.dayTotal}人`:"";
+  const all=`総合${r.rank}位 / ${r.total}人`;
   return{day,all};
 }
 function showRank(r){
   const b=$("rkRes");
-  const dN=r.isDayBest?r.dayRank:r.dayThisRank,aN=r.isBest?r.rank:r.thisRank;
+  const dN=r.dayRank,aN=r.rank;
   if(b)b.innerHTML=`<div class="rank">RANKING · ${esc(r.who)}</div>
     <div class="rk-two">
-      ${r.dayTotal?`<div><small>今日</small><div class="rk-big"><span class="big">${dN}</span><span>位 / ${r.dayTotal}人${r.isDayBest?"":"相当"}</span></div></div>`:""}
-      <div><small>総合</small><div class="rk-big"><span class="big">${aN}</span><span>位 / ${r.total}人${r.isBest?"":"相当"}</span></div></div>
+      ${r.dayTotal?`<div><small>今日</small><div class="rk-big"><span class="big">${dN}</span><span>位 / ${r.dayTotal}人</span></div></div>`:""}
+      <div><small>総合</small><div class="rk-big"><span class="big">${aN}</span><span>位 / ${r.total}人</span></div></div>
     </div>
-    <p class="hint">${r.isBest?"自己ベスト更新。":`自己ベストは ${r.best} 点（総合 ${r.rank} 位）。`}${r.dayTotal&&!r.isDayBest?`今日のベストは ${r.dayBest} 点（今日 ${r.dayRank} 位）。`:""}</p>
+    <p class="hint">${r.isBest?"自己ベスト更新！":`順位はあなたのベスト（総合 ${r.best} 点${r.dayTotal&&!r.isDayBest?`・今日 ${r.dayBest} 点`:""}）で決まります。`}</p>
     <div class="actions"><button class="ghost" id="rkSee">ランキングを見る</button></div>`;
   const s=$("rkSee");if(s)s.onclick=()=>{intro();const p=$("rankPanel");if(p)p.scrollIntoView({block:"start"})};
   return r;
