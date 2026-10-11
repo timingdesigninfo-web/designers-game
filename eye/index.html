@@ -1045,8 +1045,12 @@ async function drawCard(avg,jp,en,rows,t,rk){
   x.strokeStyle=CH;x.lineWidth=3;x.beginPath();x.arc(92,92,16,0,7);x.moveTo(92,64);x.lineTo(92,120);x.moveTo(64,92);x.lineTo(120,92);x.stroke();
   x.fillStyle=CH;x.font=`400 40px ${D}`;x.textBaseline="middle";x.fillText("デザイナーの目",138,94);
   x.textBaseline="alphabetic";
-  x.fillStyle=T?metalGrad(x,T.metal,72,180,420,210):YL;x.font=`500 22px ${M}`;x.fillText(en.split("").join(String.fromCharCode(8202)),72,206);
-  x.fillStyle=T?metalGrad(x,T.metal,70,220,470,290):CH;x.font=`400 ${jp.length>7?50:T?72:62}px ${D}`;x.fillText(jp,70,282);x.fillStyle=CH;
+  x.fillStyle=T?metalGrad(x,T.metal,72,170,520,200):YL;x.font=`500 ${T?26:22}px ${M}`;x.fillText(en.split("").join(String.fromCharCode(8202)),72,T?192:206);
+  if(T){ // 称号は大きく、影を付けて前に出す
+    x.save();x.shadowColor="rgba(0,0,0,.45)";x.shadowBlur=14;x.shadowOffsetY=6;
+    x.fillStyle=metalGrad(x,T.metal,66,200,520,320);x.font=`400 ${jp.length>3?96:118}px ${D}`;x.fillText(jp,64,318);x.restore();
+  }else{x.fillStyle=CH;x.font=`400 ${jp.length>7?50:62}px ${D}`;x.fillText(jp,70,282)}
+  x.fillStyle=CH;
   x.font=`400 200px ${D}`;x.fillText(String(avg),62,500);const sw=x.measureText(String(avg)).width;
   x.font=`700 34px ${B}`;x.globalAlpha=.75;x.fillText("/ 100",80+sw,496);x.globalAlpha=1;
   rows.forEach(([n,v],i)=>{const y=180+i*62;x.fillStyle=CH;x.font=`700 26px ${B}`;x.fillText(n,660,y+9);
