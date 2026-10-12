@@ -100,7 +100,8 @@ async function top(scope) {
     total,
     list: ids.map((id, i) => {
       const [name, kind] = metas[i];
-      return { rank: i + 1, id, name: name || id.slice(2), kind: kind || (id.startsWith('x:') ? 'x' : 'name'), avg: scores[i] };
+      const rank = scores.indexOf(scores[i]) + 1; // 同点は同じ順位
+      return { rank, id, name: name || id.slice(2), kind: kind || (id.startsWith('x:') ? 'x' : 'name'), avg: scores[i] };
     }),
   };
 }
@@ -160,8 +161,11 @@ async function submit(body) {
   }
   const isDayBest = avg > dayBestBefore;
   if (isDayBest) cmds.push(['ZADD', dk, rankScore(avg, now), lower], ['EXPIRE', dk, 8 * 86400]);
-  cmds.push(['ZREVRANK', RANK, lower], ['ZCARD', RANK], ['ZCOUNT', RANK, String(avg + 1), '+inf']);
-  cmds.push(['ZREVRANK', dk, lower], ['ZCARD', dk], ['ZCOUNT', dk, String(avg + 1), '+inf']);
+  // 順位は「自分より高い点の人数＋1」。同点は同じ順位になる
+  const bestAll = isBest ? avg : Number(u.best);
+  const bestDay = isDayBest ? avg : dayBestBefore;
+  cmds.push(['ZCOUNT', RANK, String(bestAll + 1), '+inf'], ['ZCARD', RANK], ['ZCOUNT', RANK, String(avg + 1), '+inf']);
+  cmds.push(['ZCOUNT', dk, String(bestDay + 1), '+inf'], ['ZCARD', dk], ['ZCOUNT', dk, String(avg + 1), '+inf']);
   const r = await db(cmds);
   const [rank, total, above, dRank, dTotal, dAbove] = r.slice(-6);
   return [200, {
