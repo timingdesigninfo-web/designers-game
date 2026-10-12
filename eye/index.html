@@ -1188,7 +1188,7 @@ async function api(body){
   return j;
 }
 let rkScope="today";
-const fmtTime=t=>{const m=Math.floor(t/60),s=(t-m*60).toFixed(1);return m?`${m}:${s.padStart(4,"0")}`:`${s}秒`};
+const fmtTime=t=>{const r=Math.round(t),m=Math.floor(r/60),s=r%60;return m?`${m}m${s}s`:`${s}s`};
 async function loadRanking(scope){
   if(scope)rkScope=scope;
   document.querySelectorAll(".rktabs .segb").forEach(b=>{b.setAttribute("aria-pressed",String(b.dataset.s===rkScope));b.onclick=()=>loadRanking(b.dataset.s)});
