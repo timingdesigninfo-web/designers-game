@@ -44,7 +44,13 @@ const sign = s => crypto.createHmac('sha256', SECRET).update(s).digest('hex');
 const sha = s => crypto.createHash('sha256').update(s).digest('hex');
 const safeEq = (a, b) => typeof a === 'string' && typeof b === 'string' && a.length === b.length && crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
 // 同点なら先に出した人が上：小数部に「早さ」を入れる
-const rankScore = (avg, t) => avg + (1e10 - Math.floor(t / 1000)) / 1e11;
+const rankScore = (avg, t) => avg + (1e10 - Math.floor(t / 1000)) / 1e11; // 旧方式（時間なし）
+// 点数が同じなら合計時間が短いほど上：小数部に時間（0.1秒単位）を入れる
+const timeScore = (avg, tenths) => avg + (10000 - tenths) / 1e5;
+function decodeTime(raw) { // スコアから合計時間（秒）を取り出す。旧方式の記録は null
+  const avg = Math.floor(raw), t = 10000 - (raw - avg) * 1e5;
+  return Math.abs(t - Math.round(t)) < 0.01 && t >= 0 && t <= 5000 ? Math.round(t) / 10 : null;
+}
 
 function send(res, code, body) {
   res.statusCode = code;
@@ -90,8 +96,8 @@ async function top(scope) {
   const day = jstDay();
   const key = today ? dayKey(day) : RANK;
   const [list, total] = await db([['ZREVRANGE', key, 0, 99, 'WITHSCORES'], ['ZCARD', key]]);
-  const ids = [], scores = [];
-  for (let i = 0; i < list.length; i += 2) { ids.push(list[i]); scores.push(Math.floor(Number(list[i + 1]))); }
+  const ids = [], raws = [];
+  for (let i = 0; i < list.length; i += 2) { ids.push(list[i]); raws.push(Number(list[i + 1])); }
   if (!ids.length) return { scope: today ? 'today' : 'all', day, total: 0, list: [] };
   const metas = await db(ids.map(id => ['HMGET', userKey(id), 'name', 'kind']));
   return {
@@ -100,8 +106,8 @@ async function top(scope) {
     total,
     list: ids.map((id, i) => {
       const [name, kind] = metas[i];
-      const rank = scores.indexOf(scores[i]) + 1; // 同点は同じ順位
-      return { rank, id, name: name || id.slice(2), kind: kind || (id.startsWith('x:') ? 'x' : 'name'), avg: scores[i] };
+      const rank = raws.indexOf(raws[i]) + 1; // 点数も時間も同じなら同じ順位
+      return { rank, id, name: name || id.slice(2), kind: kind || (id.startsWith('x:') ? 'x' : 'name'), avg: Math.floor(raws[i]), time: decodeTime(raws[i]) };
     }),
   };
 }
@@ -133,6 +139,10 @@ async function submit(body) {
   if (!Number.isInteger(avg) || avg < 0 || avg > 100) return [400, { error: '点数が正しくありません。' }];
   if (rows.length !== MODES || rows.some(v => !Number.isInteger(v) || v < 0 || v > 100)) return [400, { error: '種目別の点数が正しくありません。' }];
   if (Math.abs(rows.reduce((a, b) => a + b, 0) / MODES - avg) > 1.5) return [400, { error: '点数の合計が合いません。' }];
+  const time = Number(body.time);
+  if (!(time > 0 && time <= 400 && time <= age / 1000 + 5)) return [400, { error: '時間が正しくありません。' }];
+  const tenths = Math.round(time * 10);
+  const score = timeScore(avg, tenths);
 
   // 同じランク戦は1回だけ登録できる
   const [fresh] = await db([['SET', 'eye:gid:' + gid, '1', 'NX', 'EX', 4 * 3600]]);
@@ -140,8 +150,9 @@ async function submit(body) {
 
   const day = jstDay();
   const dk = dayKey(day);
-  const [dayPrev] = await db([['ZSCORE', dk, lower]]);
-  const dayBestBefore = dayPrev == null ? -1 : Math.floor(Number(dayPrev));
+  const [dayPrev, allPrev] = await db([['ZSCORE', dk, lower], ['ZSCORE', RANK, lower]]);
+  const dayPrevScore = dayPrev == null ? -1 : Number(dayPrev);
+  const allPrevScore = allPrev == null ? -1 : Number(allPrev);
 
   let u = await owner(lower);
   let newToken = null;
@@ -153,32 +164,32 @@ async function submit(body) {
   }
 
   const now = Date.now();
-  const isBest = avg > Number(u.best);
+  const isBest = score > allPrevScore;
   const cmds = [['HSET', userKey(lower), 'name', me.name, 'kind', me.kind, 'tok', u.tok, 'last', String(avg), 'lt', String(now), 'plays', String(Number(u.plays || 0) + 1)]];
   if (isBest) {
-    cmds.push(['HSET', userKey(lower), 'best', String(avg), 'rows', JSON.stringify(rows), 'bt', String(now)]);
-    cmds.push(['ZADD', RANK, rankScore(avg, now), lower]);
+    cmds.push(['HSET', userKey(lower), 'best', String(avg), 'rows', JSON.stringify(rows), 'bt', String(now), 'btime', String(tenths / 10)]);
+    cmds.push(['ZADD', RANK, score, lower]);
   }
-  const isDayBest = avg > dayBestBefore;
-  if (isDayBest) cmds.push(['ZADD', dk, rankScore(avg, now), lower], ['EXPIRE', dk, 8 * 86400]);
-  // 順位は「自分より高い点の人数＋1」。同点は同じ順位になる
-  const bestAll = isBest ? avg : Number(u.best);
-  const bestDay = isDayBest ? avg : dayBestBefore;
-  cmds.push(['ZCOUNT', RANK, String(bestAll + 1), '+inf'], ['ZCARD', RANK], ['ZCOUNT', RANK, String(avg + 1), '+inf']);
-  cmds.push(['ZCOUNT', dk, String(bestDay + 1), '+inf'], ['ZCARD', dk], ['ZCOUNT', dk, String(avg + 1), '+inf']);
+  const isDayBest = score > dayPrevScore;
+  if (isDayBest) cmds.push(['ZADD', dk, score, lower], ['EXPIRE', dk, 8 * 86400]);
+  // 順位は「自分より上（点数が高い、または同点で速い）の人数＋1」。点数も時間も同じなら同じ順位
+  const bestAll = isBest ? score : allPrevScore;
+  const bestDay = isDayBest ? score : dayPrevScore;
+  cmds.push(['ZCOUNT', RANK, '(' + bestAll, '+inf'], ['ZCARD', RANK], ['ZCOUNT', RANK, '(' + score, '+inf']);
+  cmds.push(['ZCOUNT', dk, '(' + bestDay, '+inf'], ['ZCARD', dk], ['ZCOUNT', dk, '(' + score, '+inf']);
   const r = await db(cmds);
   const [rank, total, above, dRank, dTotal, dAbove] = r.slice(-6);
   return [200, {
     name: me.name,
     kind: me.kind,
     avg,
-    best: isBest ? avg : Number(u.best),
+    best: Math.floor(bestAll),
     isBest,
     rank: rank + 1,              // 自己ベストでの総合順位
     thisRank: above + 1,         // 今回の点数なら何位相当か
     total,
     day,
-    dayBest: isDayBest ? avg : dayBestBefore,
+    dayBest: Math.floor(bestDay),
     isDayBest,
     dayRank: dRank + 1,          // 今日の自己ベストでの順位
     dayThisRank: dAbove + 1,     // 今回の点数なら今日何位相当か

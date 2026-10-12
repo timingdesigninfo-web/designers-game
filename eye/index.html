@@ -268,7 +268,8 @@ button:focus-visible{outline:3px solid var(--magenta);outline-offset:2px}
 .earned-en{display:block;font:500 12px var(--f-mono);letter-spacing:.2em;opacity:.8}
 .rk-earned{display:inline-block;margin-top:2px;padding:4px 12px;border-radius:99px;font-weight:700;color:#2a2008;background:linear-gradient(135deg,#fff3b0,#e2b53a 50%,#9a6f12)}
 .rklist a{color:var(--ink);text-decoration:none;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rk-s{font:500 16px var(--f-mono)}
+.rk-s{font:500 16px var(--f-mono);display:flex;flex-direction:column;align-items:flex-end;line-height:1.2}
+.rk-time{font:400 11px var(--f-mono);color:var(--muted)}
 #rkMore{margin-top:12px;width:100%}
 .linkbtn{background:none;border:0;padding:0 0 0 6px;color:var(--muted);text-decoration:underline;font:inherit;letter-spacing:0;cursor:pointer}
 .rkform{display:flex;flex-direction:column;gap:10px}
@@ -942,6 +943,7 @@ function submit(timeout){
   if(S.phase!=="play")return;
   if(!timeout&&S.user===null&&(P.mode==="center"||P.mode==="weight"))return;
   stopTimer();
+  S.time=(S.time||0)+(timeout?MODES[P.mode].limit:Math.max(0,MODES[P.mode].limit-S.left)); // ランク戦の合計時間
   const r=score();
   S.scores[S.round]={mode:P.mode,s:Math.max(0,Math.min(100,Math.round(r.s))),d:(timeout?"時間切れ · ":"")+r.d,timeout:!!timeout};
   S.phase="reveal";showResult();
@@ -1186,6 +1188,7 @@ async function api(body){
   return j;
 }
 let rkScope="today";
+const fmtTime=t=>{const m=Math.floor(t/60),s=(t-m*60).toFixed(1);return m?`${m}:${s.padStart(4,"0")}`:`${s}秒`};
 async function loadRanking(scope){
   if(scope)rkScope=scope;
   document.querySelectorAll(".rktabs .segb").forEach(b=>{b.setAttribute("aria-pressed",String(b.dataset.s===rkScope));b.onclick=()=>loadRanking(b.dataset.s)});
@@ -1198,7 +1201,7 @@ async function loadRanking(scope){
   if(!d.list.length){box.innerHTML=`<p class="hint">${want==="today"?"今日はまだ誰もいません。今日の1位を取りにいこう。":"まだ誰もいません。ランク戦で最初の1人になろう。"}</p>`;return}
   const who=e=>e.kind==="x"?`<a href="https://x.com/${encodeURIComponent(e.name)}" target="_blank" rel="noopener">@${esc(e.name)}</a>`:`<span class="rk-name">${esc(e.name)}</span>`;
   const row=e=>{const T=TITLES[e.rank];
-    return`<li class="${e.id===myId?"me":""}${T?` top top${e.rank}`:""}"><span class="rk-n">${e.rank}</span><span class="rk-who">${T?`<b class="rk-title">${T.jp}</b>`:""}${who(e)}</span><span class="rk-s">${e.avg}</span></li>`};
+    return`<li class="${e.id===myId?"me":""}${T?` top top${e.rank}`:""}"><span class="rk-n">${e.rank}</span><span class="rk-who">${T?`<b class="rk-title">${T.jp}</b>`:""}${who(e)}</span><span class="rk-s">${e.avg}${e.time!=null?`<small class="rk-time">${fmtTime(e.time)}</small>`:""}</span></li>`};
   const draw=all=>{box.innerHTML=`<ol class="rklist">${d.list.slice(0,all?100:10).map(row).join("")}</ol>`+
     (!all&&d.list.length>10?`<button class="ghost" id="rkMore">100位まで見る</button>`:"")+
     (myId?`<p class="hint">あなたは「${esc(shown(me))}」で参加中。<button class="linkbtn" id="rkLeave">ランキングから外す</button></p>`:"");
@@ -1281,7 +1284,7 @@ async function finishRank(avg,rows6){
   if(rk.result)return showRank(rk.result);
   try{
     const who={kind:rk.kind,name:rk.name};
-    const r=await api({action:"submit",gid:rk.gid,seed:rk.seed,t0:rk.t0,sig:rk.sig,kind:rk.kind,name:rk.name,token:tokenFor(who),avg,rows:rows6.map(x=>x[1])});
+    const r=await api({action:"submit",gid:rk.gid,seed:rk.seed,t0:rk.t0,sig:rk.sig,kind:rk.kind,name:rk.name,token:tokenFor(who),avg,rows:rows6.map(x=>x[1]),time:Math.max(.1,Math.round((S.time||0)*10)/10)});
     if(r.token){const t=lsGet(RK_T,{});t[idOf(who)]=r.token;lsSet(RK_T,t)}
     rk.result={who:shown(who),rank:r.rank,thisRank:r.thisRank,total:r.total,best:r.best,isBest:r.isBest,dayRank:r.dayRank,dayThisRank:r.dayThisRank,dayTotal:r.dayTotal,isDayBest:r.isDayBest,dayBest:r.dayBest};
     const hs=loadHist();if(hs.length){hs[hs.length-1].rk=rk.result;saveHist(hs)}
