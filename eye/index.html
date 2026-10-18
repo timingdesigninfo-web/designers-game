@@ -775,7 +775,7 @@ function intro(){
     ${(()=>{const me=lsGet(RK_ME,null);return me&&me.name?`<p class="hint">ランク戦の名前：${esc(shown(me))}<button class="linkbtn" id="rkChange">変える</button></p>`:""})()}
     ${best?`<span class="note">自己ベスト ${best} 点</span>`:""}
   </section>
-  <section class="panel" id="rankPanel"><div class="hhead"><div class="rank">RANKING · ランク戦</div><span class="note" id="rkTotal"></span></div><div class="seg rktabs" role="tablist"><button class="segb" data-s="today" role="tab" aria-pressed="true"><b>今日</b><small>0時にリセット</small></button><button class="segb" data-s="all" role="tab" aria-pressed="false"><b>総合</b><small>全期間</small></button></div><div id="rkList"><p class="hint">読み込み中…</p></div></section>
+  <section class="panel" id="rankPanel"><div class="hhead"><div class="rank">RANKING · ランク戦</div><span class="note" id="rkTotal"></span></div><div class="seg rktabs" role="tablist"><button class="segb" data-s="week" role="tab" aria-pressed="true"><b>今週</b><small>月曜0時にリセット</small></button><button class="segb" data-s="all" role="tab" aria-pressed="false"><b>総合</b><small>全期間</small></button></div><div id="rkList"><p class="hint">読み込み中…</p></div></section>
   ${histHTML(loadHist())}`;
   bindHist();
   loadRanking();
@@ -1016,11 +1016,11 @@ const TITLES={
   2:{jp:"名匠",en:"MASTER",metal:["#ffffff","#c3cad2","#6f7a86"],ink:"#2a3038"},
   3:{jp:"匠",en:"ARTISAN",metal:["#ffd9b5","#c47a3d","#7a431b"],ink:"#3d200a"}
 };
-// 総合の上位3人を優先し、なければ今日の上位3人に「今日の」を付ける
+// 総合の上位3人を優先し、なければ今週の上位3人に「今週の」を付ける
 function titleOf(r){
   if(!r)return null;
   if(r.rank<=3&&r.total)return{...TITLES[r.rank],n:r.rank,scope:"総合"};
-  if(r.dayTotal&&r.dayRank<=3)return{...TITLES[r.dayRank],n:r.dayRank,scope:"今日"};
+  if(r.dayTotal&&r.dayRank<=3)return{...TITLES[r.dayRank],n:r.dayRank,scope:"今週"};
   return null;
 }
 function metalGrad(x,c,x0,y0,x1,y1){const g=x.createLinearGradient(x0,y0,x1,y1);g.addColorStop(0,c[0]);g.addColorStop(.45,c[1]);g.addColorStop(.55,c[0]);g.addColorStop(1,c[2]);return g}
@@ -1074,7 +1074,7 @@ async function drawCard(avg,jp,en,rows,t,rk){
     drawMedal(x,1088,104,58,T,D);
     x.textAlign="right";x.fillStyle=metalGrad(x,T.metal,600,60,1010,110);x.font=`400 36px ${D}`;x.fillText(line,1010,104);
     x.fillStyle=CH;x.font=`700 20px ${B}`;x.globalAlpha=.9;x.fillText(sub,1010,140);x.globalAlpha=1;x.textAlign="left";
-  }else if(rk){ // ランク戦の順位バッジ（右上）：今日を大きく、総合を小さく
+  }else if(rk){ // ランク戦の順位バッジ（右上）：今週を大きく、総合を小さく
     const p=rkParts(rk),line=p.day||p.all,sub=p.day?p.all:"";
     x.font=`400 34px ${D}`;const bw=x.measureText(line).width+44;
     x.fillStyle=PK;x.fillRect(1150-bw,58,bw,60);
@@ -1187,7 +1187,7 @@ async function api(body){
   if(!r.ok)throw new Error(j.error||"通信できませんでした。電波のよい所でもう一度どうぞ。");
   return j;
 }
-let rkScope="today";
+let rkScope="week";
 const fmtTime=t=>{const r=Math.round(t),m=Math.floor(r/60),s=r%60;return m?`${m}m${s}s`:`${s}s`};
 async function loadRanking(scope){
   if(scope)rkScope=scope;
@@ -1197,8 +1197,8 @@ async function loadRanking(scope){
   let d;try{const r=await fetch(API+"?scope="+want);d=await r.json();if(!r.ok)throw new Error(d.error||"通信できませんでした。")}catch(e){box.innerHTML=`<p class="hint">${esc(e.message)}</p>`;return}
   if(!$("rkList")||want!==rkScope)return;
   const me=lsGet(RK_ME,null),myId=me&&tokenFor(me)?idOf(me):"";
-  $("rkTotal").textContent=d.total?`${want==="today"?"今日 ":""}${d.total} 人参加`:"";
-  if(!d.list.length){box.innerHTML=`<p class="hint">${want==="today"?"今日はまだ誰もいません。今日の1位を取りにいこう。":"まだ誰もいません。ランク戦で最初の1人になろう。"}</p>`;return}
+  $("rkTotal").textContent=d.total?`${want==="week"?"今週 ":""}${d.total} 人参加`:"";
+  if(!d.list.length){box.innerHTML=`<p class="hint">${want==="week"?"今週はまだ誰もいません。今週の1位を取りにいこう。":"まだ誰もいません。ランク戦で最初の1人になろう。"}</p>`;return}
   const who=e=>e.kind==="x"?`<a href="https://x.com/${encodeURIComponent(e.name)}" target="_blank" rel="noopener">@${esc(e.name)}</a>`:`<span class="rk-name">${esc(e.name)}</span>`;
   const row=e=>{const T=TITLES[e.rank];
     return`<li class="${e.id===myId?"me":""}${T?` top top${e.rank}`:""}"><span class="rk-n">${e.rank}</span><span class="rk-who">${T?`<b class="rk-title">${T.jp}</b>`:""}${who(e)}</span><span class="rk-s">${e.avg}${e.time!=null?`<small class="rk-time">${fmtTime(e.time)}</small>`:""}</span></li>`};
@@ -1294,8 +1294,8 @@ async function finishRank(avg,rows6){
     return undefined;
   }
 }
-function rkParts(r){ // 今日と総合の表示用テキスト
-  const day=r.dayTotal?`今日${r.dayRank}位 / ${r.dayTotal}人`:"";
+function rkParts(r){ // 今週と総合の表示用テキスト
+  const day=r.dayTotal?`今週${r.dayRank}位 / ${r.dayTotal}人`:"";
   const all=`総合${r.rank}位 / ${r.total}人`;
   return{day,all};
 }
@@ -1304,7 +1304,7 @@ function showRank(r){
   const dN=r.dayRank,aN=r.rank;
   if(b)b.innerHTML=`<div class="rank">RANKING · ${esc(r.who)}</div>
     <div class="rk-two">
-      ${r.dayTotal?`<div><small>今日</small><div class="rk-big"><span class="big">${dN}</span><span>位 / ${r.dayTotal}人</span></div></div>`:""}
+      ${r.dayTotal?`<div><small>今週</small><div class="rk-big"><span class="big">${dN}</span><span>位 / ${r.dayTotal}人</span></div></div>`:""}
       <div><small>総合</small><div class="rk-big"><span class="big">${aN}</span><span>位 / ${r.total}人</span></div></div>
     </div>
     ${(T=>T?`<div class="earned" style="--m0:${T.metal[0]};--m1:${T.metal[1]};--m2:${T.metal[2]}"><span class="earned-medal">${T.n}</span><div><small>称号を獲得</small><b class="earned-jp">${T.jp}</b><span class="earned-en">${T.en}</span></div></div>`:"")(titleOf(r))}

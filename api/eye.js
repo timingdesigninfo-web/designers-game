@@ -1,6 +1,6 @@
 // デザイナーの目：ランク戦のランキングAPI（Vercel Functions + Upstash Redis）
 //
-// GET  /api/eye?action=top              上位100件と参加人数
+// GET  /api/eye?scope=week|all          上位100件と参加人数（週は月曜0時に切り替え）
 // POST /api/eye  {action:"start", ...}   ランク戦を始める（問題の種と署名を発行）
 // POST /api/eye  {action:"submit", ...}  結果を登録（自己ベストなら更新）して順位を返す
 // POST /api/eye  {action:"delete", ...}  自分の記録をランキングから外す
@@ -20,9 +20,26 @@ const DB_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST
 const SECRET = process.env.RANK_SECRET || crypto.createHash('sha256').update('eye-rank:' + (DB_TOKEN || '')).digest('hex');
 
 const RANK = 'eye:rank';
-// 今日のランキング（日本時間の0時で切り替え）。8日たったら自動で消える
+// 今週のランキング（日本時間の月曜0時で切り替え）。15日たったら自動で消える
+// ※ 以前は「今日」のランキングだった。APIの項目名（day, dayRank など）は互換のためそのまま使い、中身を週にしている
 const jstDay = (t = Date.now()) => new Date(t + 9 * 3600e3).toISOString().slice(0, 10);
-const dayKey = d => 'eye:day:' + d;
+const jstWeek = (t = Date.now()) => { // その週の月曜（日本時間）の日付
+  const d = new Date(t + 9 * 3600e3), back = (d.getUTCDay() + 6) % 7;
+  return new Date(d.getTime() - back * 86400e3).toISOString().slice(0, 10);
+};
+const weekKey = w => 'eye:week:' + w;
+const dayKey = d => 'eye:day:' + d; // 旧「今日」ランキング（週への引き継ぎにだけ使う）
+const WEEK_TTL = 15 * 86400;
+// 週ランキングがまだ無ければ、その週のこれまでの日別ランキングから作る（切り替え直後の1回だけ）
+async function ensureWeek(w) {
+  const wk = weekKey(w);
+  const [fresh] = await db([['SET', 'eye:weekinit:' + w, '1', 'NX', 'EX', WEEK_TTL]]);
+  if (fresh !== 'OK') return wk;
+  const mon = Date.parse(w + 'T00:00:00Z'), days = [];
+  for (let i = 0; i < 7; i++) { const d = new Date(mon + i * 86400e3).toISOString().slice(0, 10); if (d <= jstDay()) days.push(dayKey(d)); }
+  await db([['ZUNIONSTORE', wk, days.length + 1, wk, ...days, 'AGGREGATE', 'MAX'], ['EXPIRE', wk, WEEK_TTL]]);
+  return wk;
+}
 const userKey = h => 'eye:user:' + h;
 const HANDLE_RE = /^[A-Za-z0-9_]{1,15}$/;
 const MIN_PLAY_MS = Number(process.env.EYE_MIN_PLAY_MS || 45 * 1000); // 18ラウンドをこれより速く終えるのは不可能
@@ -92,16 +109,16 @@ async function owner(id) {
 }
 
 async function top(scope) {
-  const today = scope === 'today';
-  const day = jstDay();
-  const key = today ? dayKey(day) : RANK;
+  const today = scope === 'week' || scope === 'today'; // 'today' は古いページからの呼び出し
+  const day = jstWeek();
+  const key = today ? await ensureWeek(day) : RANK;
   const [list, total] = await db([['ZREVRANGE', key, 0, 99, 'WITHSCORES'], ['ZCARD', key]]);
   const ids = [], raws = [];
   for (let i = 0; i < list.length; i += 2) { ids.push(list[i]); raws.push(Number(list[i + 1])); }
-  if (!ids.length) return { scope: today ? 'today' : 'all', day, total: 0, list: [] };
+  if (!ids.length) return { scope: today ? 'week' : 'all', day, total: 0, list: [] };
   const metas = await db(ids.map(id => ['HMGET', userKey(id), 'name', 'kind']));
   return {
-    scope: today ? 'today' : 'all',
+    scope: today ? 'week' : 'all',
     day,
     total,
     list: ids.map((id, i) => {
@@ -148,8 +165,8 @@ async function submit(body) {
   const [fresh] = await db([['SET', 'eye:gid:' + gid, '1', 'NX', 'EX', 4 * 3600]]);
   if (fresh !== 'OK') return [409, { error: 'このランク戦はもう登録済みです。' }];
 
-  const day = jstDay();
-  const dk = dayKey(day);
+  const day = jstWeek();
+  const dk = await ensureWeek(day);
   const [dayPrev, allPrev] = await db([['ZSCORE', dk, lower], ['ZSCORE', RANK, lower]]);
   const dayPrevScore = dayPrev == null ? -1 : Number(dayPrev);
   const allPrevScore = allPrev == null ? -1 : Number(allPrev);
@@ -171,7 +188,7 @@ async function submit(body) {
     cmds.push(['ZADD', RANK, score, lower]);
   }
   const isDayBest = score > dayPrevScore;
-  if (isDayBest) cmds.push(['ZADD', dk, score, lower], ['EXPIRE', dk, 8 * 86400]);
+  if (isDayBest) cmds.push(['ZADD', dk, score, lower], ['EXPIRE', dk, WEEK_TTL]);
   // 順位は「自分より上（点数が高い、または同点で速い）の人数＋1」。点数も時間も同じなら同じ順位
   const bestAll = isBest ? score : allPrevScore;
   const bestDay = isDayBest ? score : dayPrevScore;
@@ -191,8 +208,8 @@ async function submit(body) {
     day,
     dayBest: Math.floor(bestDay),
     isDayBest,
-    dayRank: dRank + 1,          // 今日の自己ベストでの順位
-    dayThisRank: dAbove + 1,     // 今回の点数なら今日何位相当か
+    dayRank: dRank + 1,          // 今週の自己ベストでの順位
+    dayThisRank: dAbove + 1,     // 今回の点数なら今週何位相当か
     dayTotal: dTotal,
     token: newToken,
   }];
@@ -256,7 +273,7 @@ async function remove(body) {
   const u = await owner(lower);
   if (!u) return [200, { removed: false }];
   if (!safeEq(sha(String(body.token || '')), u.tok)) return [403, { error: '登録した端末からだけ外せます。' }];
-  await db([['ZREM', RANK, lower], ['ZREM', dayKey(jstDay()), lower], ['ZREM', dayKey(jstDay(Date.now() - 86400e3)), lower], ['DEL', userKey(lower)]]);
+  await db([['ZREM', RANK, lower], ['ZREM', weekKey(jstWeek()), lower], ['ZREM', weekKey(jstWeek(Date.now() - 7 * 86400e3)), lower], ['ZREM', dayKey(jstDay()), lower], ['DEL', userKey(lower)]]);
   return [200, { removed: true }];
 }
 
