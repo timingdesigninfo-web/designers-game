@@ -41,6 +41,8 @@ async function ensureWeek(w) {
   return wk;
 }
 const userKey = h => 'eye:user:' + h;
+// ランキングに出す名前の一覧（1回の HMGET でまとめて読む。前は1人ずつ読んでいて回数が多かった）
+const NAMES = 'eye:names';
 const HANDLE_RE = /^[A-Za-z0-9_]{1,15}$/;
 const MIN_PLAY_MS = Number(process.env.EYE_MIN_PLAY_MS || 45 * 1000); // 18ラウンドをこれより速く終えるのは不可能
 const MAX_PLAY_MS = 3 * 3600 * 1000;
@@ -69,10 +71,10 @@ function decodeTime(raw) { // スコアから合計時間（秒）を取り出�
   return Math.abs(t - Math.round(t)) < 0.01 && t >= 0 && t <= 5000 ? Math.round(t) / 10 : null;
 }
 
-function send(res, code, body) {
+function send(res, code, body, cache) {
   res.statusCode = code;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Cache-Control', cache || 'no-store');
   res.end(JSON.stringify(body));
 }
 
@@ -116,7 +118,16 @@ async function top(scope) {
   const ids = [], raws = [];
   for (let i = 0; i < list.length; i += 2) { ids.push(list[i]); raws.push(Number(list[i + 1])); }
   if (!ids.length) return { scope: today ? 'week' : 'all', day, total: 0, list: [] };
-  const metas = await db(ids.map(id => ['HMGET', userKey(id), 'name', 'kind']));
+  const packed = (await db([['HMGET', NAMES, ...ids]]))[0] || [];
+  const metas = packed.map(v => { try { const o = JSON.parse(v); return [o.n, o.k]; } catch { return null; } });
+  // 一覧にまだない人だけ 1人ずつ読んで、一覧に足しておく（次からは読まない）
+  const miss = ids.map((id, i) => metas[i] ? -1 : i).filter(i => i >= 0);
+  if (miss.length) {
+    const got = await db(miss.map(i => ['HMGET', userKey(ids[i]), 'name', 'kind']));
+    const fill = [];
+    miss.forEach((i, j) => { metas[i] = got[j]; if (got[j][0]) fill.push(ids[i], JSON.stringify({ n: got[j][0], k: got[j][1] })); });
+    if (fill.length) await db([['HSET', NAMES, ...fill]]);
+  }
   return {
     scope: today ? 'week' : 'all',
     day,
@@ -182,7 +193,7 @@ async function submit(body) {
 
   const now = Date.now();
   const isBest = score > allPrevScore;
-  const cmds = [['HSET', userKey(lower), 'name', me.name, 'kind', me.kind, 'tok', u.tok, 'last', String(avg), 'lt', String(now), 'plays', String(Number(u.plays || 0) + 1)]];
+  const cmds = [['HSET', NAMES, lower, JSON.stringify({ n: me.name, k: me.kind })], ['HSET', userKey(lower), 'name', me.name, 'kind', me.kind, 'tok', u.tok, 'last', String(avg), 'lt', String(now), 'plays', String(Number(u.plays || 0) + 1)]];
   if (isBest) {
     cmds.push(['HSET', userKey(lower), 'best', String(avg), 'rows', JSON.stringify(rows), 'bt', String(now), 'btime', String(tenths / 10)]);
     cmds.push(['ZADD', RANK, score, lower]);
@@ -273,7 +284,7 @@ async function remove(body) {
   const u = await owner(lower);
   if (!u) return [200, { removed: false }];
   if (!safeEq(sha(String(body.token || '')), u.tok)) return [403, { error: '登録した端末からだけ外せます。' }];
-  await db([['ZREM', RANK, lower], ['ZREM', weekKey(jstWeek()), lower], ['ZREM', weekKey(jstWeek(Date.now() - 7 * 86400e3)), lower], ['ZREM', dayKey(jstDay()), lower], ['DEL', userKey(lower)]]);
+  await db([['HDEL', NAMES, lower], ['ZREM', RANK, lower], ['ZREM', weekKey(jstWeek()), lower], ['ZREM', weekKey(jstWeek(Date.now() - 7 * 86400e3)), lower], ['ZREM', dayKey(jstDay()), lower], ['DEL', userKey(lower)]]);
   return [200, { removed: true }];
 }
 
@@ -286,7 +297,8 @@ module.exports = async (req, res) => {
     const pageId = rq.r || q.get('r') || (u.pathname.match(/\/eye\/r\/([a-z0-9]+)\/?$/) || [])[1];
     if (req.method === 'GET' && cardId) return cardImage(res, cardId);
     if (req.method === 'GET' && pageId) return cardPage(res, pageId);
-    if (req.method === 'GET') return send(res, 200, await top(q.get('scope')));
+    // ランキングは Vercel の CDN に30秒おく（見る人が多くても データベースを読むのは30秒に1回ほど）
+    if (req.method === 'GET') return send(res, 200, await top(q.get('scope')), 'public, max-age=0, s-maxage=30, stale-while-revalidate=120');
     if (req.method !== 'POST') return send(res, 405, { error: 'method' });
     if (await rateLimited(req)) return send(res, 429, { error: '少し時間をおいてからもう一度どうぞ。' });
     let body = req.body;
