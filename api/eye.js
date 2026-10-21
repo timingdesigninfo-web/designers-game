@@ -297,8 +297,8 @@ module.exports = async (req, res) => {
     const pageId = rq.r || q.get('r') || (u.pathname.match(/\/eye\/r\/([a-z0-9]+)\/?$/) || [])[1];
     if (req.method === 'GET' && cardId) return cardImage(res, cardId);
     if (req.method === 'GET' && pageId) return cardPage(res, pageId);
-    // ランキングは Vercel の CDN に30秒おく（見る人が多くても データベースを読むのは30秒に1回ほど）
-    if (req.method === 'GET') return send(res, 200, await top(q.get('scope')), 'public, max-age=0, s-maxage=30, stale-while-revalidate=120');
+    // ランキングは Vercel の CDN に1分おく（見る人が多くても データベースを読むのは1分に1回ほど）
+    if (req.method === 'GET') return send(res, 200, await top(q.get('scope')), 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
     if (req.method !== 'POST') return send(res, 405, { error: 'method' });
     if (await rateLimited(req)) return send(res, 429, { error: '少し時間をおいてからもう一度どうぞ。' });
     let body = req.body;
