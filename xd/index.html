@@ -1379,7 +1379,7 @@ let G,B,SNAP;
 const SAVE='xd-senki-v5';
 function save(){/* 自動セーブはしない。教会でのいのり（prayAsk）だけが記録する */}
 /* ---- サーバー保存（自分のサイト /xd/ で公開したときだけ有効。アーティファクト内では使わない） ---- */
-const SYNC=/^https?:$/.test(location.protocol)&&location.pathname.indexOf('/xd')===0;
+const SYNC=/^https?:$/.test(location.protocol)&&!/claude|anthropic/i.test(location.hostname)&&location.hostname!=='';
 const CODE_KEY='xd-senki-code',CODE_RE=/^XD[A-HJ-NP-Z2-9]{12}$/;
 function getCode(make){let c=null;try{c=localStorage.getItem(CODE_KEY)}catch(e){}
   if(c&&CODE_RE.test(c))return c;if(!make)return null;
